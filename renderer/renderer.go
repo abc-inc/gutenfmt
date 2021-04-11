@@ -32,7 +32,7 @@ func NewComp() *CompRenderer {
 }
 
 func (cr CompRenderer) Render(i interface{}) (string, error) {
-	r, ok := cr.byType[typeName(reflect.TypeOf(i))]
+	r, ok := cr.byType[TypeName(reflect.TypeOf(i))]
 	if !ok {
 		return "", ErrUnsupported
 	}
@@ -65,7 +65,10 @@ func FromStruct(typ reflect.Type) Renderer {
 
 func FromStructSlice(typ reflect.Type) Renderer {
 	_, pns:=jsonMetadata(typ.Elem())
-	
+	if len(pns)== 0 {
+		return NoopRenderer
+	}
+
 	return RendererFunc(func(i interface{}) (string, error) {
 		b := &strings.Builder{}
 		for _, pn := range pns {

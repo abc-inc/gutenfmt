@@ -1,14 +1,15 @@
 package gfmt_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 
 	. "github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/abc-inc/gutenfmt/renderer"
 )
 
 func ExampleJSON_Write_struct() {
@@ -16,19 +17,19 @@ func ExampleJSON_Write_struct() {
 	u := *NewUser("John", "Doe")
 	t := *NewTeam("Support", u, u)
 
-	// The custom renderer demonstrates how to combine literal strings and JSON on a struct that was not intended for serialization.
+	// The custom renderer demonstrates how to combine literal strings and JSON on a struct that is not intended for serialization.
 	o.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
-		ms, _ := json.Marshal(i.(Team).Members())
-		return `{"team":"` + i.(Team).Name() + `","members":` + string(ms) + `}`, nil
+		t := i.(Team)
+		return `{"team":"` + t.Name() + `","members":` + strconv.Itoa(len(t.Members())) + `}`, nil
 	})
 
-	_, _ = o.Write(t)
-	_, _ = o.Write("\n\n")
 	_, _ = o.Write(u)
+	_, _ = o.Write("\n\n")
+	_, _ = o.Write(t)
 	// Output:
-	// {"team":"SUPPORT","members":[{"username":"John Doe","email":"john.doe@local"},{"username":"John Doe","email":"john.doe@local"}]}
-	//
 	// {"username":"John Doe","email":"john.doe@local"}
+	//
+	// {"team":"SUPPORT","members":2}
 }
 
 func ExampleJSON_Write_structSlice() {
@@ -66,7 +67,24 @@ func ExampleTab_Write_struct() {
 func ExampleTab_Write_structSlice() {
 	b := &strings.Builder{}
 	u := *NewUser("John", "Doe")
-	_, _ = NewTab(b).Write([]User{u, u})
+	t := *NewTeam("Support", u, u)
+
+	o := NewTab(b)
+	typ := renderer.TypeName(reflect.TypeOf([]Team{}))
+	o.Renderer.SetRendererFunc(typ, func(i interface{}) (string, error) {
+		b := strings.Builder{}
+		b.WriteString("name\tmembers\t\n")
+
+		ts := i.([]Team)
+		for _, t := range ts {
+			b.WriteString(fmt.Sprintf("%s\t%d\t\n", t.Name(), len(t.Members())))
+		}
+		return b.String(), nil
+	})
+
+	_, _ = o.Write([]User{u, u})
+	_, _ = o.Write("\n")
+	_, _ = o.Write([]Team{t, t})
 
 	// Since the Output cannot contain trailing spaces, it gets stripped from the table in this example.
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
@@ -75,13 +93,16 @@ func ExampleTab_Write_structSlice() {
 	// username   email
 	// John Doe   john.doe@local
 	// John Doe   john.doe@local
+	// name      members
+	// SUPPORT   2
+	// SUPPORT   2
 }
 
 func ExampleText_Write_struct() {
-	o := NewText(os.Stdout)
 	u := *NewUser("John", "Doe")
 	t := *NewTeam("Support", u, u)
 
+	o := NewText(os.Stdout)
 	o.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		return i.(Team).Name(), nil
 	})
@@ -96,11 +117,21 @@ func ExampleText_Write_struct() {
 }
 
 func ExampleText_Write_structSlice() {
-	o := NewText(os.Stdout)
 	u := *NewUser("John", "Doe")
+	t := *NewTeam("Support", u, u)
+
+	o := NewText(os.Stdout)
+	o.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+		return i.(Team).Name(), nil
+	})
 
 	_, _ = o.Write([]User{u, u})
+	_, _ = o.Write("\n\n")
+	_, _ = o.Write([]Team{t, t})
 	// Output:
 	// John Doe <john.doe@local>
 	// John Doe <john.doe@local>
+	//
+	// SUPPORT
+	// SUPPORT
 }

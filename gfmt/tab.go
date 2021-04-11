@@ -22,6 +22,7 @@ func (f Tab) Write(i interface{}) (int, error) {
 		return 0, nil
 	}
 
+	f.w.cnt = 0
 	tw := tabwriter.NewWriter(f.w, 1, 4, 3, ' ', 0)
 
 	if s, err := f.Renderer.Render(i); err == nil {

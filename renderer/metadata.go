@@ -46,7 +46,7 @@ func strFormat(v reflect.Value) string {
 	}
 }
 
-func typeName(typ reflect.Type) string {
+func TypeName(typ reflect.Type) string {
 	n := typ.Name()
 	if n == "" {
 		n = typ.String()
@@ -72,7 +72,7 @@ func jsonMetadata(typ reflect.Type) ([]string, []string) {
 }
 
 func jsonPropName(f reflect.StructField) string {
-	if n, ok := f.Tag.Lookup("json"); strings.HasPrefix(n, "-") {
+	if n, ok := f.Tag.Lookup("json"); strings.HasPrefix(n, "-") || f.PkgPath != "" {
 		return ""
 	} else if n = strings.SplitN(n, ",", 2)[0]; ok && n != "" {
 		return n

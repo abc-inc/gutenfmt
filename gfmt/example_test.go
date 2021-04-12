@@ -12,20 +12,19 @@ import (
 	"github.com/abc-inc/gutenfmt/renderer"
 )
 
-func ExampleJSON_Write_struct() {
-	o := NewJSON(os.Stdout)
-	u := *NewUser("John", "Doe")
-	t := *NewTeam("Support", u, u)
+var u = *NewUser("John", "Doe")
+var t = *NewTeam("Support", u, u)
 
-	// The custom renderer demonstrates how to combine literal strings and JSON on a struct that is not intended for serialization.
-	o.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+func ExampleJSON_Write_struct() {
+	f := NewJSON(os.Stdout)
+	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		t := i.(Team)
 		return `{"team":"` + t.Name() + `","members":` + strconv.Itoa(len(t.Members())) + `}`, nil
 	})
 
-	_, _ = o.Write(u)
-	_, _ = o.Write("\n\n")
-	_, _ = o.Write(t)
+	_, _ = f.Write(u)
+	_, _ = f.Write("\n\n")
+	_, _ = f.Write(t)
 	// Output:
 	// {"username":"John Doe","email":"john.doe@local"}
 	//
@@ -33,29 +32,25 @@ func ExampleJSON_Write_struct() {
 }
 
 func ExampleJSON_Write_structSlice() {
-	o := NewJSON(os.Stdout)
-	u := *NewUser("John", "Doe")
+	f := NewJSON(os.Stdout)
 
-	_, _ = o.Write([]User{u, u})
+	_, _ = f.Write([]User{u, u})
 	// Output:
 	// [{"username":"John Doe","email":"john.doe@local"},{"username":"John Doe","email":"john.doe@local"}]
 }
 
 func ExampleTab_Write_struct() {
 	b := &strings.Builder{}
-	o := NewTab(b)
-	u := *NewUser("John", "Doe")
-	t := *NewTeam("Support", u, u)
-
-	o.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	f := NewTab(b)
+	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		return fmt.Sprintf("name\t%s\t", i.(Team).Name()), nil
 	})
 
-	_, _ = o.Write(u)
-	_, _ = o.Write("\n")
-	_, _ = o.Write(t)
+	_, _ = f.Write(u)
+	_, _ = f.Write("\n")
+	_, _ = f.Write(t)
 
-	// Since the Output cannot contain trailing spaces, it gets stripped from the table in this example.
+	// Since the Output cannot contain trailing spaces, it gets stripped from the table in this Example.
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
 	fmt.Println(s)
 	// Output:
@@ -66,12 +61,9 @@ func ExampleTab_Write_struct() {
 
 func ExampleTab_Write_structSlice() {
 	b := &strings.Builder{}
-	u := *NewUser("John", "Doe")
-	t := *NewTeam("Support", u, u)
-
-	o := NewTab(b)
+	f := NewTab(b)
 	typ := renderer.TypeName(reflect.TypeOf([]Team{}))
-	o.Renderer.SetRendererFunc(typ, func(i interface{}) (string, error) {
+	f.Renderer.SetRendererFunc(typ, func(i interface{}) (string, error) {
 		b := strings.Builder{}
 		b.WriteString("name\tmembers\t\n")
 
@@ -82,11 +74,11 @@ func ExampleTab_Write_structSlice() {
 		return b.String(), nil
 	})
 
-	_, _ = o.Write([]User{u, u})
-	_, _ = o.Write("\n")
-	_, _ = o.Write([]Team{t, t})
+	_, _ = f.Write([]User{u, u})
+	_, _ = f.Write("\n")
+	_, _ = f.Write([]Team{t, t})
 
-	// Since the Output cannot contain trailing spaces, it gets stripped from the table in this example.
+	// Since the Example Output cannot contain trailing spaces, they get stripped.
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
 	fmt.Println(s)
 	// Output:
@@ -99,17 +91,14 @@ func ExampleTab_Write_structSlice() {
 }
 
 func ExampleText_Write_struct() {
-	u := *NewUser("John", "Doe")
-	t := *NewTeam("Support", u, u)
-
-	o := NewText(os.Stdout)
-	o.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	f := NewText(os.Stdout)
+	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		return i.(Team).Name(), nil
 	})
 
-	_, _ = o.Write(t)
-	_, _ = o.Write("\n\n")
-	_, _ = o.Write(u)
+	_, _ = f.Write(t)
+	_, _ = f.Write("\n\n")
+	_, _ = f.Write(u)
 	// Output:
 	// SUPPORT
 	//
@@ -117,17 +106,14 @@ func ExampleText_Write_struct() {
 }
 
 func ExampleText_Write_structSlice() {
-	u := *NewUser("John", "Doe")
-	t := *NewTeam("Support", u, u)
-
-	o := NewText(os.Stdout)
-	o.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	f := NewText(os.Stdout)
+	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		return i.(Team).Name(), nil
 	})
 
-	_, _ = o.Write([]User{u, u})
-	_, _ = o.Write("\n\n")
-	_, _ = o.Write([]Team{t, t})
+	_, _ = f.Write([]User{u, u})
+	_, _ = f.Write("\n\n")
+	_, _ = f.Write([]Team{t, t})
 	// Output:
 	// John Doe <john.doe@local>
 	// John Doe <john.doe@local>

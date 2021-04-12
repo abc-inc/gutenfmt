@@ -42,7 +42,7 @@ func strFormat(v reflect.Value) string {
 		return fmt.Sprint(v.Interface())
 	// case reflect.UnsafePointer:
 	default:
-		panic("Cannot convert " + reflect.TypeOf(v).Name() + " (" + fmt.Sprintf("%v", v.Type()) + ")")
+		panic(fmt.Sprintf("Cannot convert %s (%v)", reflect.TypeOf(v).Name(), v.Type()))
 	}
 }
 

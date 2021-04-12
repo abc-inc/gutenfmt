@@ -3,10 +3,11 @@ package gfmt
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/abc-inc/gutenfmt/renderer"
-	"github.com/alecthomas/chroma/formatters"
 	"io"
 	"reflect"
+
+	"github.com/abc-inc/gutenfmt/renderer"
+	"github.com/alecthomas/chroma/formatters"
 
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/lexers/j"
@@ -21,7 +22,7 @@ type ColJSON struct {
 }
 
 func NewColJSON(w io.Writer) *ColJSON {
-	return &ColJSON{newCountingWriter(w), renderer.NewComp(), "", "  "}
+	return &ColJSON{wrapCountingWriter(w), renderer.NewComp(), "", "  "}
 }
 
 func (f ColJSON) Write(i interface{}) (int, error) {
@@ -54,9 +55,6 @@ func (f ColJSON) Write(i interface{}) (int, error) {
 	return int(f.w.cnt), nil
 }
 
-// highlight some text.
-//
-// formatter and style may be empty, in which case a best-effort is made.
 func (f ColJSON) highlight(w io.Writer, source, style string) error {
 	s := styles.Get(style)
 	if s == nil {

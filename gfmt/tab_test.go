@@ -92,15 +92,15 @@ func TestTab_WriteMapSliceCustom(t *testing.T) {
 	msi := []map[string]int{{"c": 1, "d": 2}, {"c": 3, "d": 4}}
 
 	b := &strings.Builder{}
-	o := NewTab(b)
-	o.Renderer.SetRenderer(reflect.TypeOf(mss).String(), renderer.FromMapSliceKeys(reflect.ValueOf("a")))
+	f := NewTab(b)
+	f.Renderer.SetRenderer(reflect.TypeOf(mss).String(), renderer.FromMapSliceKeys(reflect.ValueOf("a")))
 
-	_, err := o.Write(mss)
+	_, err := f.Write(mss)
 	NoError(t, err)
 	Equal(t, "a   \nw   \ny", b.String())
 
 	b.Reset()
-	_, err = o.Write(msi)
+	_, err = f.Write(msi)
 	NoError(t, err)
 	Regexp(t, "(c   d   \n1   2   \n3   4)|(d   c   \n2   1   \n4   3)", b.String())
 }

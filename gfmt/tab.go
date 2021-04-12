@@ -14,7 +14,7 @@ type Tab struct {
 }
 
 func NewTab(w io.Writer) *Tab {
-	return &Tab{newCountingWriter(w), renderer.NewComp()}
+	return &Tab{wrapCountingWriter(w), renderer.NewComp()}
 }
 
 func (f Tab) Write(i interface{}) (int, error) {
@@ -48,7 +48,7 @@ func (f Tab) Write(i interface{}) (int, error) {
 		_, err := f.writeSlice(tw, reflect.ValueOf(i))
 		return int(f.w.cnt), err
 	case reflect.Map:
-		_, err := f.writeMap(tw, reflect.ValueOf(i).MapRange())
+		err := f.writeMap(tw, reflect.ValueOf(i).MapRange())
 		return int(f.w.cnt), err
 	default:
 		_, err := f.writeStructKeyVal(tw, i)
@@ -82,23 +82,18 @@ func (f Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 			return cnt, err
 		}
 	}
-	tw.Flush()
-	return cnt, nil
+	return cnt, tw.Flush()
 }
 
-func (f Tab) writeMap(tw *tabwriter.Writer, iter *reflect.MapIter) (int, error) {
-	cnt := 0
+func (f Tab) writeMap(tw *tabwriter.Writer, iter *reflect.MapIter) error {
 	for iter.Next() {
-		k := iter.Key().Interface()
-		v := iter.Value().Interface()
-		n, err := fmt.Fprintf(tw, "%v\t%v\t\n", renderer.StrVal(k), renderer.StrVal(v))
-		cnt += n
-		if err != nil {
-			return cnt, err
+		k := renderer.StrVal(iter.Key().Interface())
+		v := renderer.StrVal(iter.Value().Interface())
+		if _, err := fmt.Fprintf(tw, "%v\t%v\t\n", k, v); err != nil {
+			return err
 		}
 	}
-	tw.Flush()
-	return cnt, nil
+	return tw.Flush()
 }
 
 func (f Tab) writeMapTab(tw *tabwriter.Writer, i interface{}) (int, error) {
@@ -126,7 +121,7 @@ func (f Tab) writeStructKeyVal(tw *tabwriter.Writer, i interface{}) (int, error)
 }
 
 func (f Tab) writeStructTab(tw *tabwriter.Writer, v reflect.Value) (int, error) {
-	r := renderer.FromStructSlice(v.Type())
+	r := renderer.FromStructSlice(v.Type(), "\t")
 	s, err := r.Render(v.Interface())
 	if err != nil {
 		return 0, err

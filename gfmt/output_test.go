@@ -11,7 +11,6 @@ import (
 	. "github.com/stretchr/testify/require"
 )
 
-
 func Test_Write_Types(t *testing.T) {
 	type data struct {
 		kind reflect.Kind

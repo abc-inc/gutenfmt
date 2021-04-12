@@ -14,7 +14,7 @@ type countingWriter struct {
 	cnt uint64
 }
 
-func newCountingWriter(w io.Writer) *countingWriter {
+func wrapCountingWriter(w io.Writer) *countingWriter {
 	if cw, ok := w.(*countingWriter); ok {
 		return cw
 	}

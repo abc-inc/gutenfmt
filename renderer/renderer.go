@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"text/template"
@@ -49,40 +50,39 @@ func (cr *CompRenderer) SetRendererFunc(n string, r RendererFunc) {
 
 func FromStruct(typ reflect.Type) Renderer {
 	fns, pns := jsonMetadata(typ)
+	if len(pns) == 0 {
+		return NoopRenderer
+	}
 
 	return RendererFunc(func(i interface{}) (string, error) {
 		v := reflect.ValueOf(i)
 		b := &strings.Builder{}
 		for i, fn := range fns {
-			b.WriteString(pns[i])
-			b.WriteByte('\t')
-			b.WriteString(StrVal(v.FieldByName(fn).Interface()))
-			b.WriteString("\t\n")
+			if _, err := b.WriteString(fmt.Sprintf("%s\t%s\t\n", pns[i], StrVal(v.FieldByName(fn).Interface()))); err != nil {
+				return "", err
+			}
 		}
 		return b.String()[:b.Len()-1], nil
 	})
 }
 
-func FromStructSlice(typ reflect.Type) Renderer {
-	_, pns:=jsonMetadata(typ.Elem())
-	if len(pns)== 0 {
+func FromStructSlice(typ reflect.Type, delim string) Renderer {
+	_, pns := jsonMetadata(typ.Elem())
+	if len(pns) == 0 {
 		return NoopRenderer
 	}
 
 	return RendererFunc(func(i interface{}) (string, error) {
 		b := &strings.Builder{}
-		for _, pn := range pns {
-			b.WriteString(pn)
-			b.WriteByte('\t')
-		}
-		b.WriteByte('\n')
+		b.WriteString(strings.Join(pns, delim))
+		b.WriteString(delim + "\n")
 
 		v := reflect.ValueOf(i)
 		for idx := 0; idx < v.Len(); idx++ {
 			e := v.Index(idx)
 			for p := range pns {
 				b.WriteString(StrVal(e.Field(p).Interface()))
-				b.WriteByte('\t')
+				b.WriteString(delim)
 			}
 			b.WriteByte('\n')
 		}
@@ -95,6 +95,27 @@ func FromTemplate(tmpl template.Template) Renderer {
 		b := &strings.Builder{}
 		if err := tmpl.Execute(b, i); err != nil {
 			return "", err
+		}
+		return b.String(), nil
+	})
+}
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func FromMap() Renderer {
+	return RendererFunc(func(i interface{}) (string, error) {
+		v := reflect.ValueOf(i)
+		iter := v.MapRange()
+
+		b := &strings.Builder{}
+		for iter.Next() {
+			k := iter.Key().Interface()
+			v := iter.Value().Interface()
+			if _, err := fmt.Fprintf(b, "%v\t%v\t\n", StrVal(k), StrVal(v)); err != nil {
+				return "", err
+			}
 		}
 		return b.String(), nil
 	})

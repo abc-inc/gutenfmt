@@ -8,8 +8,7 @@ import (
 )
 
 func NewAutoJSON(w io.Writer) InterfaceWriter {
-	if (w == os.Stdout && isatty.IsTerminal(os.Stdout.Fd())) ||
-		(w == os.Stderr && isatty.IsTerminal(os.Stderr.Fd())) {
+	if w == os.Stdout && isatty.IsTerminal(os.Stdout.Fd()) {
 		return NewColJSON(w)
 	}
 	return NewJSON(w)

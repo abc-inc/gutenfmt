@@ -18,8 +18,8 @@ var t = *NewTeam("Support", u, u)
 func ExampleJSON_Write_struct() {
 	f := NewJSON(os.Stdout)
 	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
-		t := i.(Team)
-		return `{"team":"` + t.Name() + `","members":` + strconv.Itoa(len(t.Members())) + `}`, nil
+		tm := i.(Team)
+		return `{"team":"` + tm.Name() + `","members":` + strconv.Itoa(len(tm.Members())) + `}`, nil
 	})
 
 	_, _ = f.Write(u)
@@ -42,9 +42,9 @@ func ExampleJSON_Write_structSlice() {
 func ExampleTab_Write_struct() {
 	b := &strings.Builder{}
 	f := NewTab(b)
-	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	f.Renderer.SetRenderer(reflect.TypeOf(t).Name(), renderer.AsTab(renderer.RendererFunc(func(i interface{}) (string, error) {
 		return fmt.Sprintf("name\t%s\t", i.(Team).Name()), nil
-	})
+	})))
 
 	_, _ = f.Write(u)
 	_, _ = f.Write("\n")
@@ -63,7 +63,7 @@ func ExampleTab_Write_structSlice() {
 	b := &strings.Builder{}
 	f := NewTab(b)
 	typ := renderer.TypeName(reflect.TypeOf([]Team{}))
-	f.Renderer.SetRendererFunc(typ, func(i interface{}) (string, error) {
+	f.Renderer.SetRenderer(typ, renderer.AsTab(renderer.RendererFunc(func(i interface{}) (string, error) {
 		b := strings.Builder{}
 		b.WriteString("name\tmembers\t\n")
 
@@ -72,7 +72,7 @@ func ExampleTab_Write_structSlice() {
 			b.WriteString(fmt.Sprintf("%s\t%d\t\n", t.Name(), len(t.Members())))
 		}
 		return b.String(), nil
-	})
+	})))
 
 	_, _ = f.Write([]User{u, u})
 	_, _ = f.Write("\n")

@@ -3,9 +3,10 @@ package gfmt
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/abc-inc/gutenfmt/renderer"
 	"io"
 	"reflect"
+
+	"github.com/abc-inc/gutenfmt/renderer"
 )
 
 type JSON struct {

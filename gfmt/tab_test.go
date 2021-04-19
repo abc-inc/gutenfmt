@@ -93,7 +93,8 @@ func TestTab_WriteMapSliceCustom(t *testing.T) {
 
 	b := &strings.Builder{}
 	f := NewTab(b)
-	f.Renderer.SetRenderer(reflect.TypeOf(mss).String(), renderer.FromMapSliceKeys(reflect.ValueOf("a")))
+	f.Renderer.SetRenderer(reflect.TypeOf(mss).String(),
+		renderer.AsTab(renderer.FromMapSliceKeys("\t", reflect.ValueOf("a"))))
 
 	_, err := f.Write(mss)
 	NoError(t, err)

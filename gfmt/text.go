@@ -2,9 +2,10 @@ package gfmt
 
 import (
 	"fmt"
-	"github.com/abc-inc/gutenfmt/renderer"
 	"io"
 	"reflect"
+
+	"github.com/abc-inc/gutenfmt/renderer"
 )
 
 type Text struct {
@@ -52,7 +53,7 @@ func (f Text) writeSlice(v reflect.Value) (int, error) {
 	if v.Len() == 0 {
 		return 0, nil
 	}
-	
+
 	n, err := f.Write(v.Index(0).Interface())
 	if err != nil {
 		return n, err

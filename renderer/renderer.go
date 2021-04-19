@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"text/tabwriter"
 	"text/template"
 )
 
@@ -165,14 +166,14 @@ func FromMapSlice(typ reflect.Type) Renderer {
 	})
 }
 
-func FromMapSliceKeys(ks ...reflect.Value) Renderer {
+func FromMapSliceKeys(sep string, ks ...reflect.Value) Renderer {
 	return RendererFunc(func(i interface{}) (string, error) {
 		v := reflect.ValueOf(i)
 		b := &strings.Builder{}
 
 		for _, k := range ks {
 			b.WriteString(StrVal(k.Interface()))
-			b.WriteByte('\t')
+			b.WriteString(sep)
 		}
 		b.WriteByte('\n')
 
@@ -182,7 +183,7 @@ func FromMapSliceKeys(ks ...reflect.Value) Renderer {
 				if v.IsValid() {
 					b.WriteString(StrVal(v))
 				}
-				b.WriteByte('\t')
+				b.WriteString(sep)
 			}
 			b.WriteByte('\n')
 		}
@@ -193,4 +194,21 @@ func FromMapSliceKeys(ks ...reflect.Value) Renderer {
 
 func StrVal(i interface{}) string {
 	return strFormat(reflect.ValueOf(i))
+}
+
+func AsTab(r Renderer) Renderer {
+	return RendererFunc(func(i interface{}) (string, error) {
+		s, err := r.Render(i)
+		if err != nil {
+			return "", err
+		}
+
+		b := &strings.Builder{}
+		tw := tabwriter.NewWriter(b, 1, 4, 3, ' ', 0)
+		tw.Write([]byte(s))
+		if err = tw.Flush(); err != nil {
+			return "", err
+		}
+		return b.String(), nil
+	})
 }

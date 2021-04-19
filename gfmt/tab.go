@@ -2,10 +2,11 @@ package gfmt
 
 import (
 	"fmt"
-	"github.com/abc-inc/gutenfmt/renderer"
 	"io"
 	"reflect"
 	"text/tabwriter"
+
+	"github.com/abc-inc/gutenfmt/renderer"
 )
 
 type Tab struct {
@@ -22,16 +23,8 @@ func (f Tab) Write(i interface{}) (int, error) {
 		return 0, nil
 	}
 
-	f.w.cnt = 0
-	tw := tabwriter.NewWriter(f.w, 1, 4, 3, ' ', 0)
-
 	if s, err := f.Renderer.Render(i); err == nil {
-		_, err := tw.Write([]byte(s))
-		if err != nil {
-			return int(f.w.cnt), err
-		}
-		tw.Flush()
-		return int(f.w.cnt), err
+		return f.w.WriteString(s)
 	} else if err != renderer.ErrUnsupported {
 		return 0, err
 	}
@@ -42,6 +35,9 @@ func (f Tab) Write(i interface{}) (int, error) {
 	} else if !isCompositeType(typ) {
 		return fmt.Fprint(f.w, i)
 	}
+
+	f.w.cnt = 0
+	tw := tabwriter.NewWriter(f.w, 1, 4, 3, ' ', 0)
 
 	switch typ.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -76,7 +72,7 @@ func (f Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 
 	cnt := n
 	for idx := 1; idx < v.Len(); idx++ {
-		n, err = f.w.WriteString("\n" +renderer.StrVal(v.Index(idx).Interface()))
+		n, err = f.w.WriteString("\n" + renderer.StrVal(v.Index(idx).Interface()))
 		cnt += n
 		if err != nil {
 			return cnt, err

@@ -1,3 +1,19 @@
+/**
+ * Copyright 2021 The gutenfmt authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package gfmt_test
 
 import (
@@ -19,7 +35,7 @@ func Test_Write_Types(t *testing.T) {
 	}
 	type unit struct {
 		b *strings.Builder
-		w InterfaceWriter
+		w GenericWriter
 	}
 
 	m := make(map[string]int)
@@ -56,18 +72,18 @@ func Test_Write_Types(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		sColJSON := &strings.Builder{}
+		sPrettyJSON := &strings.Builder{}
 		sJSON := &strings.Builder{}
 		// sTab := &strings.Builder{}
 		sText := &strings.Builder{}
 
-		colJSON := NewColJSON(sColJSON)
+		prettyJSON := NewPrettyJSON(sPrettyJSON)
 		json := NewJSON(sJSON)
 		// tab := NewTab(sTab)
 		text := NewText(sText)
 
 		us := []unit{
-			{sColJSON, colJSON},
+			{sPrettyJSON, prettyJSON},
 			{sJSON, json},
 			// {sTab, tab},
 			{sText, text},
@@ -88,7 +104,7 @@ func Test_Write_Types(t *testing.T) {
 				NoError(t, err)
 				Equal(t, want, u.b.String())
 
-				if _, ok := u.w.(*ColJSON); ok {
+				if f, ok := u.w.(*JSON); ok && f.Style != "" {
 					// pretty JSON is too hard to verify, so we skip further tests
 					return
 				}

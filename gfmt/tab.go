@@ -1,3 +1,19 @@
+/**
+ * Copyright 2021 The gutenfmt authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package gfmt
 
 import (
@@ -6,6 +22,7 @@ import (
 	"reflect"
 	"text/tabwriter"
 
+	"github.com/abc-inc/gutenfmt/internal/meta"
 	"github.com/abc-inc/gutenfmt/renderer"
 )
 
@@ -32,7 +49,7 @@ func (f Tab) Write(i interface{}) (int, error) {
 	typ := reflect.TypeOf(i)
 	if typ.Kind() == reflect.Ptr {
 		return f.Write(reflect.Indirect(reflect.ValueOf(i)).Interface())
-	} else if !isCompositeType(typ) {
+	} else if !meta.IsContainerType(typ.Kind()) {
 		return fmt.Fprint(f.w, i)
 	}
 
@@ -44,35 +61,35 @@ func (f Tab) Write(i interface{}) (int, error) {
 		_, err := f.writeSlice(tw, reflect.ValueOf(i))
 		return int(f.w.cnt), err
 	case reflect.Map:
-		err := f.writeMap(tw, reflect.ValueOf(i).MapRange())
+		_, err := f.writeMap(tw, i)
 		return int(f.w.cnt), err
 	default:
-		_, err := f.writeStructKeyVal(tw, i)
+		_, err := f.writeStruct(tw, i)
 		return int(f.w.cnt), err
 	}
 }
 
 func (f Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
+	if v.Type().Elem().Kind() == reflect.Struct {
+		n, err := f.writeStructSlice(tw, v)
+		return n, err
+	} else if v.Type().Elem().Kind() == reflect.Map {
+		n, err := f.writeMapSlice(tw, v)
+		return n, err
+	}
+
 	if v.Len() == 0 {
 		return 0, nil
 	}
 
-	if v.Type().Elem().Kind() == reflect.Struct {
-		n, err := f.writeStructTab(tw, v)
-		return n, err
-	} else if v.Type().Elem().Kind() == reflect.Map {
-		n, err := f.writeMapTab(tw, v.Interface())
-		return n, err
-	}
-
-	n, err := f.w.WriteString(renderer.StrVal(v.Index(0).Interface()))
+	n, err := f.w.WriteString(meta.StrVal(v.Index(0).Interface()))
 	if err != nil {
 		return n, err
 	}
 
 	cnt := n
 	for idx := 1; idx < v.Len(); idx++ {
-		n, err = f.w.WriteString("\n" + renderer.StrVal(v.Index(idx).Interface()))
+		n, err = f.w.WriteString("\n" + meta.StrVal(v.Index(idx).Interface()))
 		cnt += n
 		if err != nil {
 			return cnt, err
@@ -81,49 +98,22 @@ func (f Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 	return cnt, tw.Flush()
 }
 
-func (f Tab) writeMap(tw *tabwriter.Writer, iter *reflect.MapIter) error {
-	for iter.Next() {
-		k := renderer.StrVal(iter.Key().Interface())
-		v := renderer.StrVal(iter.Value().Interface())
-		if _, err := fmt.Fprintf(tw, "%v\t%v\t\n", k, v); err != nil {
-			return err
-		}
-	}
-	return tw.Flush()
+func (f Tab) writeMap(tw *tabwriter.Writer, i interface{}) (int, error) {
+	r := renderer.FromMap("\t", "\t\n")
+	return renderer.RenderTab(tw, r, i)
 }
 
-func (f Tab) writeMapTab(tw *tabwriter.Writer, i interface{}) (int, error) {
-	r := renderer.FromMapSlice(reflect.TypeOf(i))
-	s, err := r.Render(i)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := tw.Write([]byte(s))
-	tw.Flush()
-	return n, err
+func (f Tab) writeMapSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
+	r := renderer.FromMapSlice("\t", "\t\n", v.Type())
+	return renderer.RenderTab(tw, r, v.Interface())
 }
 
-func (f Tab) writeStructKeyVal(tw *tabwriter.Writer, i interface{}) (int, error) {
-	r := renderer.FromStruct(reflect.TypeOf(i))
-	s, err := r.Render(i)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := tw.Write([]byte(s))
-	tw.Flush()
-	return n, err
+func (f Tab) writeStruct(tw *tabwriter.Writer, i interface{}) (int, error) {
+	r := renderer.FromStruct("\t", "\t\n", reflect.TypeOf(i))
+	return renderer.RenderTab(tw, r, i)
 }
 
-func (f Tab) writeStructTab(tw *tabwriter.Writer, v reflect.Value) (int, error) {
-	r := renderer.FromStructSlice(v.Type(), "\t")
-	s, err := r.Render(v.Interface())
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := tw.Write([]byte(s))
-	tw.Flush()
-	return n, err
+func (f Tab) writeStructSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
+	r := renderer.FromStructSlice("\t", "\t\n", v.Type())
+	return renderer.RenderTab(tw, r, v.Interface())
 }

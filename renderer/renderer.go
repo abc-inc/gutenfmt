@@ -1,29 +1,54 @@
+/**
+ * Copyright 2021 The gutenfmt authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package renderer
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
-	"text/tabwriter"
 	"text/template"
+
+	"github.com/abc-inc/gutenfmt/internal/meta"
 )
 
 var ErrUnsupported = errors.New("unsupported type")
 
+//Renderer converts the given parameter to a string representation.
 type Renderer interface {
 	Render(i interface{}) (string, error)
 }
 
+// RendererFunc is an adapter to allow the use of ordinary functions as Renderers.
+// If f is a function with the appropriate signature,
+// RendererFunc(f) is a Renderer that calls f.
 type RendererFunc func(i interface{}) (string, error)
 
 func (r RendererFunc) Render(i interface{}) (string, error) {
 	return r(i)
 }
 
-var NoopRenderer = RendererFunc(func(i interface{}) (s string, err error) {
+//Noop always returns an empty string and no error.
+func Noop(i interface{}) (s string, err error) {
 	return
-})
+}
+
+// NoopRenderer returns a simple Renderer
+// that always returns an empty string and no error.
+func NoopRenderer() Renderer { return RendererFunc(Noop) }
 
 type CompRenderer struct {
 	byType map[string]Renderer
@@ -34,7 +59,7 @@ func NewComp() *CompRenderer {
 }
 
 func (cr CompRenderer) Render(i interface{}) (string, error) {
-	r, ok := cr.byType[TypeName(reflect.TypeOf(i))]
+	r, ok := cr.byType[meta.TypeName(reflect.TypeOf(i))]
 	if !ok {
 		return "", ErrUnsupported
 	}
@@ -49,164 +74,10 @@ func (cr *CompRenderer) SetRendererFunc(n string, r RendererFunc) {
 	cr.byType[n] = r
 }
 
-func FromStruct(typ reflect.Type) Renderer {
-	fns, pns := jsonMetadata(typ)
-	if len(pns) == 0 {
-		return NoopRenderer
-	}
-
-	return RendererFunc(func(i interface{}) (string, error) {
-		v := reflect.ValueOf(i)
-		b := &strings.Builder{}
-		for i, fn := range fns {
-			if _, err := b.WriteString(fmt.Sprintf("%s\t%s\t\n", pns[i], StrVal(v.FieldByName(fn).Interface()))); err != nil {
-				return "", err
-			}
-		}
-		return b.String()[:b.Len()-1], nil
-	})
-}
-
-func FromStructSlice(typ reflect.Type, delim string) Renderer {
-	_, pns := jsonMetadata(typ.Elem())
-	if len(pns) == 0 {
-		return NoopRenderer
-	}
-
-	return RendererFunc(func(i interface{}) (string, error) {
-		b := &strings.Builder{}
-		b.WriteString(strings.Join(pns, delim))
-		b.WriteString(delim + "\n")
-
-		v := reflect.ValueOf(i)
-		for idx := 0; idx < v.Len(); idx++ {
-			e := v.Index(idx)
-			for p := range pns {
-				b.WriteString(StrVal(e.Field(p).Interface()))
-				b.WriteString(delim)
-			}
-			b.WriteByte('\n')
-		}
-		return b.String(), nil
-	})
-}
-
 func FromTemplate(tmpl template.Template) Renderer {
 	return RendererFunc(func(i interface{}) (string, error) {
 		b := &strings.Builder{}
 		if err := tmpl.Execute(b, i); err != nil {
-			return "", err
-		}
-		return b.String(), nil
-	})
-}
-
-// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func FromMap() Renderer {
-	return RendererFunc(func(i interface{}) (string, error) {
-		v := reflect.ValueOf(i)
-		iter := v.MapRange()
-
-		b := &strings.Builder{}
-		for iter.Next() {
-			k := iter.Key().Interface()
-			v := iter.Value().Interface()
-			if _, err := fmt.Fprintf(b, "%v\t%v\t\n", StrVal(k), StrVal(v)); err != nil {
-				return "", err
-			}
-		}
-		return b.String(), nil
-	})
-}
-
-func FromMapSlice(typ reflect.Type) Renderer {
-	contains := func(es []interface{}, s interface{}) bool {
-		for _, e := range es {
-			if e == s {
-				return true
-			}
-		}
-		return false
-	}
-
-	return RendererFunc(func(i interface{}) (string, error) {
-		v := reflect.ValueOf(i)
-		b := &strings.Builder{}
-
-		var ks []interface{}
-		for i := 0; i < v.Len(); i++ {
-			e := v.Index(i)
-			for _, k := range e.MapKeys() {
-				n := StrVal(k.Interface())
-				if !contains(ks, n) {
-					ks = append(ks, n)
-					b.WriteString(n)
-					b.WriteByte('\t')
-				}
-			}
-		}
-		b.WriteByte('\n')
-
-		for i := 0; i < v.Len(); i++ {
-			m := v.Index(i)
-			for _, n := range ks {
-				v := m.MapIndex(reflect.ValueOf(n.(string)))
-				if v.IsValid() {
-					b.WriteString(StrVal(v))
-				}
-				b.WriteString("\t")
-			}
-			b.WriteString("\n")
-		}
-
-		return b.String()[:b.Len()-1], nil
-	})
-}
-
-func FromMapSliceKeys(sep string, ks ...reflect.Value) Renderer {
-	return RendererFunc(func(i interface{}) (string, error) {
-		v := reflect.ValueOf(i)
-		b := &strings.Builder{}
-
-		for _, k := range ks {
-			b.WriteString(StrVal(k.Interface()))
-			b.WriteString(sep)
-		}
-		b.WriteByte('\n')
-
-		for i := 0; i < v.Len(); i++ {
-			for _, k := range ks {
-				v := v.Index(i).MapIndex(k)
-				if v.IsValid() {
-					b.WriteString(StrVal(v))
-				}
-				b.WriteString(sep)
-			}
-			b.WriteByte('\n')
-		}
-
-		return b.String()[:b.Len()-1], nil
-	})
-}
-
-func StrVal(i interface{}) string {
-	return strFormat(reflect.ValueOf(i))
-}
-
-func AsTab(r Renderer) Renderer {
-	return RendererFunc(func(i interface{}) (string, error) {
-		s, err := r.Render(i)
-		if err != nil {
-			return "", err
-		}
-
-		b := &strings.Builder{}
-		tw := tabwriter.NewWriter(b, 1, 4, 3, ' ', 0)
-		tw.Write([]byte(s))
-		if err = tw.Flush(); err != nil {
 			return "", err
 		}
 		return b.String(), nil

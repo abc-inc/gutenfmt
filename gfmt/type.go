@@ -14,14 +14,15 @@
 
 package gfmt
 
-import (
-	"os"
-	"testing"
+import "reflect"
 
-	. "github.com/stretchr/testify/require"
-)
-
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+// isContainerType returns true if a type is kind of a "container".
+//
+// Note that "container" is not an official classification.
+// In this context, it represents a subset of composite types, which can hold
+// a certain amount of elements that can be accessed in arbitrary order,
+// namely, array, struct, slice and map.
+func isContainerType(k reflect.Kind) bool {
+	return k == reflect.Struct || k == reflect.Slice ||
+		k == reflect.Map || k == reflect.Array
 }

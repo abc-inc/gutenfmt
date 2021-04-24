@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gfmt
+package meta
 
 import (
-	"os"
-	"testing"
-
-	. "github.com/stretchr/testify/require"
+	"reflect"
 )
 
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+// field represents a single field found in a struct.
+type field struct {
+	Field string
+	Name  string
 }
+
+// Resolver returns a list of fields that should be recognized for the given type.
+type Resolver func(typ reflect.Type) []field
+
+// Resolve holds the default Resolver.
+var Resolve Resolver = TagResolver{"json"}.Lookup

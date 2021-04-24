@@ -12,16 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gfmt
+package render_test
 
 import (
-	"os"
 	"testing"
 
-	. "github.com/stretchr/testify/require"
+	. "github.com/abc-inc/gutenfmt/internal/render"
+	. "github.com/stretchr/testify/assert"
 )
 
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+func TestToString(t *testing.T) {
+	Equal(t, "", ToString(nil))
+	Equal(t, "x", ToString("x"))
+	Equal(t, "true", ToString(true))
+
+	Equal(t, "", ToString([]int{}))
+	Equal(t, "", ToString([0]int{}))
+	Equal(t, "1", ToString([]int{1}))
+	Equal(t, "1 2", ToString(&[]int{1, 2}))
+
+	Equal(t, "chan int", ToString(make(chan int)))
+
+	Regexp(t, `/internal/render_test\.TestToString$`, ToString(TestToString))
 }

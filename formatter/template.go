@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gfmt
+package formatter
 
 import (
-	"os"
-	"testing"
-
-	. "github.com/stretchr/testify/require"
+	"strings"
+	"text/template"
 )
 
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+// FromTemplate returns a new Formatter that applies a parsed template to the input.
+// If an error occurs executing the template, execution stops and no output is returned.
+func FromTemplate(tmpl *template.Template) Formatter {
+	return Func(func(i interface{}) (string, error) {
+		b := &strings.Builder{}
+		if err := tmpl.Execute(b, i); err != nil {
+			return "", err
+		}
+		return b.String(), nil
+	})
 }

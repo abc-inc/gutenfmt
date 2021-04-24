@@ -1,100 +1,129 @@
-/*
-Copyright © 2021 The gutenfmt authors
+// Copyright 2021 The gutenfmt authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package main
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/mattn/go-colorable"
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "whatever",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Use:   "gutenfmt",
+	Short: "Formats the input as JSON, YAML, ASCII table or name and value pairs.",
+	Long: `The gutenfmt utility formats its input to various output formats.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+Supported input formats:
+- JSON
+- Name and value pairs, separated by equal sign or colon.
+- Tab-separated name and value pairs
+
+The following output formats are supported:
+- json: JSON string. This setting is the default for non-terminals.
+- jsonc: Colorized JSON. This setting is the default for interactive terminals.
+- table: ASCII table.
+- text: Name and value pairs, separated by equal sign.
+- tsv: Tab-separated name and value pairs (useful for grep, sed, or awk).
+- yaml: YAML, a machine-readable alternative to JSON.
+- yamlc: Colorized YAML.
+`,
 	Run: func(cmd *cobra.Command, args []string) {
-		f, err := cmd.Flags().GetString("format")
+		ff, err := cmd.Flags().GetString("output")
 		if err != nil {
-			cmd.Help()
+			_ = cmd.Help()
 			os.Exit(1)
 		}
 
-		m := map[string]interface{}{}
-		in := bufio.NewScanner(os.Stdin)
-		for in.Scan() {
-			b := []byte(in.Text())
-			if json.Valid(b) {
-				json.Unmarshal(b, &m)
-			} else if strings.Contains(in.Text(), "=") {
-				kv := strings.SplitN(in.Text(), "=", 2)
-				m[kv[0]] = kv[1]
-			}
-		}
-
-		var o gfmt.InterfaceWriter
-		switch strings.ToLower(f) {
-		case "coljson":
-			o = gfmt.NewColJSON(os.Stdout)
+		m := parse()
+		var w gfmt.Writer
+		switch strings.ToLower(ff) {
+		case "":
+			w = gfmt.NewAutoJSON(os.Stdout)
 		case "json":
-			o = gfmt.NewJSON(os.Stdout)
+			w = gfmt.NewJSON(os.Stdout)
+		case "jsonc":
+			w = gfmt.NewPrettyJSON(os.Stdout)
+		case "table":
+			w = gfmt.NewTab(os.Stdout)
 		case "text":
-			o = gfmt.NewText(os.Stdout)
-		case "tab":
-			o = gfmt.NewTab(os.Stdout)
+			w = gfmt.NewText(os.Stdout)
+			w.(*gfmt.Text).Sep = "="
+		case "tsv":
+			w = gfmt.NewText(os.Stdout)
+			w.(*gfmt.Text).Sep = "\t"
+		case "yaml":
+			w = gfmt.NewYAML(os.Stdout)
+		case "yamlc":
+			w = gfmt.NewPrettyYAML(os.Stdout)
 		default:
-			cmd.Help()
+			_ = cmd.Help()
 			os.Exit(1)
 		}
 
-		o.Write([]map[string]interface{}{m})
+		if _, err := w.Write(m); err != nil {
+			log.Fatalln("Cannot write output:", err)
+		}
 	},
 }
 
 func main() {
-	Execute()
-}
+	if runtime.GOOS == "windows" {
+		colorable.EnableColorsStdout(nil)
+	}
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+	rootCmd.Flags().StringP("output", "o", "",
+		"The formatting style for command output (json, jsonc, table, text, tsv, yaml).")
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	rootCmd.Flags().String("format", "", "todo")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
+// parse attempts to detect the input format e.g., JSON and returns the value,
+// which could be a key-value pairs (map) or a slice thereof.
+func parse() interface{} {
+	m := map[string]interface{}{}
+	in := bufio.NewScanner(os.Stdin)
+	for in.Scan() {
+		s := in.Text()
+		b := []byte(s)
+		if json.Valid(b) {
+			if b[0] == '[' {
+				m2 := []interface{}{}
+				if err := json.Unmarshal(b, &m2); err != nil {
+					log.Fatalln("Cannot output JSON:", err)
+				}
+				m[""] = m2
+			} else if err := json.Unmarshal(b, &m); err != nil {
+				log.Fatalln("Cannot output JSON:", err)
+			}
+		} else if idx := strings.IndexAny(s, "=:\t"); idx > 0 {
+			m[s[:idx]] = s[idx+1:]
+		}
+	}
+	if _, ok := m[""]; ok {
+		return m[""]
+	}
+	return m
 }

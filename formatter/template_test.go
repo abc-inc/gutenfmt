@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gfmt
+package formatter_test
 
 import (
-	"os"
 	"testing"
+	"text/template"
 
+	. "github.com/abc-inc/gutenfmt/formatter"
 	. "github.com/stretchr/testify/require"
 )
 
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+func TestFromTemplate(t *testing.T) {
+	text := "mailto:{{.Mail}}\nDear {{.Name}}"
+	f := FromTemplate(template.Must(template.New("letter").Parse(text)))
+	s, _ := f.Format(map[string]string{"Name": "Jane Doe", "Mail": "jane.doe@local"})
+	Equal(t, "mailto:jane.doe@local\nDear Jane Doe", s)
 }

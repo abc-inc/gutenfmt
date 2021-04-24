@@ -1,3 +1,17 @@
+// Copyright 2021 The gutenfmt authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gfmt_test
 
 import (
@@ -6,9 +20,9 @@ import (
 )
 
 type User struct {
-	Name     string `json:"username"`
-	Mail     string `json:"email"`
-	Password string `json:"-"`
+	Name     string `json:"username" yaml:"Username"`
+	Mail     string `json:"email" yaml:"E-Mail"`
+	Password string `json:"-" yaml:"-"`
 }
 
 func NewUser(fName, lName string) *User {
@@ -41,11 +55,11 @@ func (t Team) Members() []User {
 }
 
 type JSONTypes struct {
-	DefName        string `json:""`
-	Skip           string `json:"-"`
-	OmitEmpty      string `json:",omitempty"`
-	CustOmitEmpty  string `json:"custom,omitempty"`
-	EmptyOmitEmpty string `json:",omitempty"`
+	DefName        string `json:"" yaml:""`
+	Skip           string `json:"-" yaml:"-"`
+	OmitEmpty      string `json:",omitempty" yaml:",omitempty"`
+	CustOmitEmpty  string `json:"custom,omitempty" yaml:"custom,omitempty"`
+	EmptyOmitEmpty string `json:",omitempty" yaml:",omitempty"`
 	Bool           bool
 	Int            int
 	Int8           int8
@@ -71,11 +85,11 @@ type JSONTypes struct {
 }
 
 type AllTypes struct {
-	DefName        string `json:""`
-	Skip           string `json:"-"`
-	OmitEmpty      string `json:",omitempty"`
-	CustOmitEmpty  string `json:"custom,omitempty"`
-	EmptyOmitEmpty string `json:",omitempty"`
+	DefName        string `json:"" yaml:""`
+	Skip           string `json:"-" yaml:"-"`
+	OmitEmpty      string `json:",omitempty" yaml:",omitempty"`
+	CustOmitEmpty  string `json:"custom,omitempty" yaml:"custom,omitempty"`
+	EmptyOmitEmpty string `json:",omitempty" yaml:",omitempty"`
 	Bool           bool
 	Int            int
 	Int8           int8

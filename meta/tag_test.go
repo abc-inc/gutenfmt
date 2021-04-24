@@ -12,16 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gfmt
+package meta_test
 
 import (
-	"os"
+	"reflect"
 	"testing"
 
+	. "github.com/abc-inc/gutenfmt/meta"
 	. "github.com/stretchr/testify/require"
 )
 
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+type User struct {
+	Name     string `json:"username" yaml:"Username"`
+	Mail     string `json:"email" yaml:"E-Mail"`
+	Password string `json:"-" yaml:"-"`
+	KeyPair  `json:"keys"`
+}
+
+type KeyPair struct {
+	Pub  []byte `json:"pub"`
+	priv []byte
+}
+
+func TestTagResolver_lookup(t *testing.T) {
+	fs := TagResolver{TagName: "yaml"}.Lookup(reflect.TypeOf(User{}))
+	Equal(t, 2, len(fs))
+	Equal(t, "Username", fs[0].Name)
+	Equal(t, "Name", fs[0].Field)
+	Equal(t, "E-Mail", fs[1].Name)
+	Equal(t, "Mail", fs[1].Field)
 }

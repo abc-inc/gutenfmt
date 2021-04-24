@@ -12,16 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gfmt
+package formatter_test
 
 import (
-	"os"
-	"testing"
-
-	. "github.com/stretchr/testify/require"
+	"strings"
 )
 
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+type User struct {
+	Name     string `json:"username"`
+	Mail     string `json:"email"`
+	Password string `json:"-"`
+}
+
+func NewUser(fName, lName string) *User {
+	return &User{
+		fName + " " + lName,
+		strings.ToLower(fName + "." + lName + "@local"),
+		"",
+	}
+}
+
+func (u User) String() string {
+	return u.Name + " <" + u.Mail + ">"
 }

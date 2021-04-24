@@ -1,3 +1,17 @@
+// Copyright 2021 The gutenfmt authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gfmt_test
 
 import (
@@ -19,7 +33,7 @@ func Test_Write_Types(t *testing.T) {
 	}
 	type unit struct {
 		b *strings.Builder
-		w InterfaceWriter
+		w Writer
 	}
 
 	m := make(map[string]int)
@@ -43,33 +57,26 @@ func Test_Write_Types(t *testing.T) {
 		{reflect.Float64, math.MaxFloat64, fmt.Sprint(math.MaxFloat64)},
 		// {reflect.Complex64, complex64(-2.71i), "(0-2.71i)"},   // not supported by JSON
 		// {reflect.Complex128, complex128(-3.14i), "(0-3.14i)"}, // not supported by JSON
-		// {reflect.Array, [3]string{"a", "b", "c"}, "[a b c]"},
-		// {reflect.Chan, true, "true"},                          // does not make sense
+		// {reflect.Chan, ch, "chan<- bool"},                     // not supported by JSON
 		// {reflect.Func, Test_Write_Types, "Test_Write_Types"},  // not supported by JSON
-		// {reflect.Interface, true, "true"},
-		// {reflect.Map, m, "{}"},
-		// {reflect.Ptr, true, "true"},
-		// {reflect.Slice, true, "true"},
 		{reflect.String, "str", "str"},
-		// {reflect.Struct, true, "true"},
-		// {reflect.UnsafePointer, true, "true"},
 	}
 
 	for _, tt := range tests {
-		sColJSON := &strings.Builder{}
+		sPrettyJSON := &strings.Builder{}
 		sJSON := &strings.Builder{}
-		// sTab := &strings.Builder{}
+		sTab := &strings.Builder{}
 		sText := &strings.Builder{}
 
-		colJSON := NewColJSON(sColJSON)
+		prettyJSON := NewPrettyJSON(sPrettyJSON)
 		json := NewJSON(sJSON)
-		// tab := NewTab(sTab)
+		tab := NewTab(sTab)
 		text := NewText(sText)
 
 		us := []unit{
-			{sColJSON, colJSON},
+			{sPrettyJSON, prettyJSON},
 			{sJSON, json},
-			// {sTab, tab},
+			{sTab, tab},
 			{sText, text},
 		}
 
@@ -79,16 +86,16 @@ func Test_Write_Types(t *testing.T) {
 
 				postProc := func(s string) string { return s }
 				if _, ok := u.w.(*Text); ok {
-					postProc = func(s string) string { return strings.Trim(strings.ReplaceAll(s, ",", "\n"), "[]") }
+					postProc = unJSON
 				} else if _, ok := u.w.(*Tab); ok {
-					postProc = func(s string) string { return strings.ReplaceAll(s, ",", "\n") }
+					postProc = normalizeTable
 				}
 
 				_, err := u.w.Write(tt.in)
 				NoError(t, err)
 				Equal(t, want, u.b.String())
 
-				if _, ok := u.w.(*ColJSON); ok {
+				if f, ok := u.w.(*JSON); ok && f.Style != "" {
 					// pretty JSON is too hard to verify, so we skip further tests
 					return
 				}
@@ -113,7 +120,6 @@ func Test_Write_Types(t *testing.T) {
 				// map
 				if _, ok := u.w.(*JSON); !ok {
 					// JSON does not support arbitrary maps
-
 					u.b.Reset()
 					_, err = u.w.Write(map[interface{}]interface{}{tt.in: tt.in})
 					NoError(t, err)
@@ -122,4 +128,23 @@ func Test_Write_Types(t *testing.T) {
 			})
 		}
 	}
+}
+
+// unJSON removes JSON-specific formatting such as [] and replaces comma with new line.
+func unJSON(s string) string {
+	return strings.Trim(strings.ReplaceAll(s, ",", "\n"), "[]")
+}
+
+// normalizeTable makes tabular output comparable by removing specific formatting.
+func normalizeTable(s string) string {
+	b := strings.Builder{}
+	for _, p := range strings.Split(unJSON(s), ":") {
+		b.WriteString(fmt.Sprintf("%-3s ", p))
+	}
+	if strings.Contains(s, ":") {
+		// input was an array
+		return b.String() + "\n"
+	}
+	// input was a single value
+	return strings.TrimSpace(b.String())
 }

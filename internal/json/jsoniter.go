@@ -1,3 +1,6 @@
+//go:build jsoniter
+// +build jsoniter
+
 // Copyright 2021 The gutenfmt authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gfmt
+package json
 
-import (
-	"os"
-	"testing"
+import jsoniter "github.com/json-iterator/go"
 
-	. "github.com/stretchr/testify/require"
-)
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-func Test_wrapCountingWriter(t *testing.T) {
-	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
-}
+// NewEncoder is exported by internal/json package.
+var NewEncoder = json.NewEncoder

@@ -1,7 +1,22 @@
+/**
+ * Copyright 2021 The gutenfmt authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package renderer
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -20,13 +35,13 @@ func FromStruct(sep, delim string, typ reflect.Type) Renderer {
 	}
 
 	return RendererFunc(func(i interface{}) (string, error) {
-		v := reflect.ValueOf(i)
+		v := reflect.Indirect(reflect.ValueOf(i))
 		b := &strings.Builder{}
-		for idx, fn := range fns {
-			s := fmt.Sprintf("%s%s%s%s", pns[idx], sep, meta.StrVal(v.FieldByName(fn).Interface()), delim)
-			if _, err := b.WriteString(s); err != nil {
-				return "", err
-			}
+		for idx := range fns {
+			b.WriteString(pns[idx])
+			b.WriteString(sep)
+			b.WriteString(meta.ToString(v.FieldByName(fns[idx]).Interface()))
+			b.WriteString(delim)
 		}
 		return b.String()[:b.Len()-len(delim)], nil
 	})
@@ -49,13 +64,14 @@ func FromStructSlice(sep, delim string, typ reflect.Type) Renderer {
 
 		v := reflect.ValueOf(i)
 		for idx := 0; idx < v.Len(); idx++ {
-			e := v.Index(idx)
-			for p := range pns {
-				b.WriteString(meta.StrVal(e.Field(p).Interface()))
+			e := reflect.Indirect(v.Index(idx))
+			b.WriteString(meta.ToString(e.Field(0).Interface()))
+			for pIdx := 1; pIdx < len(pns); pIdx++ {
 				b.WriteString(sep)
+				b.WriteString(meta.ToString(e.Field(pIdx).Interface()))
 			}
 			b.WriteString(delim)
 		}
-		return b.String(), nil
+		return b.String()[:b.Len()-len(delim)], nil
 	})
 }

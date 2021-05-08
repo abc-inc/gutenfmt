@@ -18,6 +18,7 @@ package gfmt
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -33,6 +34,7 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
+// JSON is a generic writer that converts arbitrary values as JSON.
 type JSON struct {
 	w        io.Writer
 	Renderer *renderer.CompRenderer
@@ -40,6 +42,9 @@ type JSON struct {
 	Style    string
 }
 
+// NewAutoJSON creates and initializes new JSON writer with or without formatting.
+// The JSON encoder uses indentation and ANSII escape sequences are used for coloring,
+// if the underlying writer is stdout.
 func NewAutoJSON(w io.Writer) *JSON {
 	if w == os.Stdout && isatty.IsTerminal(os.Stdout.Fd()) {
 		return NewPrettyJSON(w)
@@ -47,14 +52,17 @@ func NewAutoJSON(w io.Writer) *JSON {
 	return NewJSON(w)
 }
 
+// NewJSON creates a new JSON writer.
 func NewJSON(w io.Writer) *JSON {
 	return &JSON{w, renderer.NewComp(), "", ""}
 }
 
+// NewPrettyJSON creates a new JSON writer with indentation and coloring.
 func NewPrettyJSON(w io.Writer) *JSON {
 	return &JSON{w, renderer.NewComp(), "  ", "native"}
 }
 
+// Write writes the JSON representation of the given value to the underlying Writer.
 func (f JSON) Write(i interface{}) (int, error) {
 	if i == nil {
 		return 0, nil
@@ -62,7 +70,7 @@ func (f JSON) Write(i interface{}) (int, error) {
 
 	if s, err := f.Renderer.Render(i); err == nil {
 		return io.WriteString(f.w, s)
-	} else if err != renderer.ErrUnsupported {
+	} else if !errors.Is(err, renderer.ErrUnsupported) {
 		return 0, err
 	}
 
@@ -70,7 +78,7 @@ func (f JSON) Write(i interface{}) (int, error) {
 	if typ.Kind() == reflect.Ptr {
 		return f.Write(reflect.Indirect(reflect.ValueOf(i)).Interface())
 	} else if !meta.IsContainerType(typ.Kind()) {
-		return fmt.Fprint(f.w, meta.StrVal(i))
+		return fmt.Fprint(f.w, meta.ToString(i))
 	}
 
 	b := &strings.Builder{}
@@ -93,14 +101,16 @@ func (f JSON) Write(i interface{}) (int, error) {
 	return int(w.cnt), nil
 }
 
-func (f JSON) highlight(w io.Writer, source, style string) error {
+// highlight formats text as JSON and writes it to the Writer.
+// If an unknown style is specified, a fallback style is used instead.
+func (f JSON) highlight(w io.Writer, text, style string) error {
 	s := styles.Get(style)
 	if s == nil {
 		s = styles.Fallback
 	}
 
 	l := chroma.Coalesce(j.JSON)
-	it, err := l.Tokenise(nil, source)
+	it, err := l.Tokenise(nil, text)
 	if err != nil {
 		return err
 	}

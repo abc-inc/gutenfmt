@@ -17,6 +17,7 @@
 package gfmt
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -43,7 +44,7 @@ func (f Text) Write(i interface{}) (int, error) {
 
 	if s, err := f.Renderer.Render(i); err == nil {
 		return io.WriteString(f.w, s)
-	} else if err != renderer.ErrUnsupported {
+	} else if !errors.Is(err, renderer.ErrUnsupported) {
 		return 0, err
 	}
 

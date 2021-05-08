@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
+// Package renderer provides various implementations to convert values to strings.
 package renderer
 
 import (
 	"errors"
 	"reflect"
-	"strings"
-	"text/template"
 
 	"github.com/abc-inc/gutenfmt/internal/meta"
 )
 
+// ErrUnsupported is the error resulting if a Renderer does not support the type.
 var ErrUnsupported = errors.New("unsupported type")
 
-//Renderer converts the given parameter to a string representation.
+// Renderer converts the given parameter to its string representation.
 type Renderer interface {
 	Render(i interface{}) (string, error)
 }
@@ -41,45 +41,41 @@ func (r RendererFunc) Render(i interface{}) (string, error) {
 	return r(i)
 }
 
-//Noop always returns an empty string and no error.
-func Noop(i interface{}) (s string, err error) {
+// Noop always returns an empty string and no error.
+func Noop(_ interface{}) (s string, err error) {
 	return
 }
 
-// NoopRenderer returns a simple Renderer
-// that always returns an empty string and no error.
+// NoopRenderer returns a simple Renderer that always returns an empty string and no error.
 func NoopRenderer() Renderer { return RendererFunc(Noop) }
 
+// CompRenderer combines multiple Renderers, each handling a different type.
 type CompRenderer struct {
 	byType map[string]Renderer
 }
 
+// NewComp creates and initializes a new CompRenderer.
 func NewComp() *CompRenderer {
 	return &CompRenderer{make(map[string]Renderer)}
 }
 
+// Renderer converts the given parameter to its string representation.
+// If none of the registered Renderers can handle the given value, an error is returned.
 func (cr CompRenderer) Render(i interface{}) (string, error) {
-	r, ok := cr.byType[meta.TypeName(reflect.TypeOf(i))]
-	if !ok {
-		return "", ErrUnsupported
+	if r, ok := cr.byType[meta.TypeName(reflect.TypeOf(i))]; ok {
+		return r.Render(i)
 	}
-	return r.Render(i)
+	return "", ErrUnsupported
 }
 
+// SetRenderer registers the Renderer for the given type.
+// If a Renderer already exists for the type, it is replaced.
 func (cr *CompRenderer) SetRenderer(n string, r Renderer) {
 	cr.byType[n] = r
 }
 
+// SetRendererFunc registers the RendererFunc for the given type.
+// If a Renderer already exists for the type, it is replaced.
 func (cr *CompRenderer) SetRendererFunc(n string, r RendererFunc) {
 	cr.byType[n] = r
-}
-
-func FromTemplate(tmpl template.Template) Renderer {
-	return RendererFunc(func(i interface{}) (string, error) {
-		b := &strings.Builder{}
-		if err := tmpl.Execute(b, i); err != nil {
-			return "", err
-		}
-		return b.String(), nil
-	})
 }

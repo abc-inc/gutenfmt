@@ -17,6 +17,7 @@
 package gfmt
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -42,7 +43,7 @@ func (f Tab) Write(i interface{}) (int, error) {
 
 	if s, err := f.Renderer.Render(i); err == nil {
 		return f.w.WriteString(s)
-	} else if err != renderer.ErrUnsupported {
+	} else if !errors.Is(err, renderer.ErrUnsupported) {
 		return 0, err
 	}
 
@@ -54,7 +55,7 @@ func (f Tab) Write(i interface{}) (int, error) {
 	}
 
 	f.w.cnt = 0
-	tw := tabwriter.NewWriter(f.w, 1, 4, 3, ' ', 0)
+	tw := tabwriter.NewWriter(f.w, 4, 4, 1, ' ', 0)
 
 	switch typ.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -82,14 +83,14 @@ func (f Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 		return 0, nil
 	}
 
-	n, err := f.w.WriteString(meta.StrVal(v.Index(0).Interface()))
+	n, err := f.w.WriteString(meta.ToString(v.Index(0).Interface()))
 	if err != nil {
 		return n, err
 	}
 
 	cnt := n
 	for idx := 1; idx < v.Len(); idx++ {
-		n, err = f.w.WriteString("\n" + meta.StrVal(v.Index(idx).Interface()))
+		n, err = f.w.WriteString("\n" + meta.ToString(v.Index(idx).Interface()))
 		cnt += n
 		if err != nil {
 			return cnt, err

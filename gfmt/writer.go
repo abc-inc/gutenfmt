@@ -49,9 +49,9 @@ func wrapCountingWriter(w io.Writer) *countingWriter {
 }
 
 // Write writes len(p) bytes from p to the underlying Writer.
-// It returns the number of bytes written from p (0 <= n <= len(p))
-// and any error encountered that caused the write to stop early.
-// Additionally it increases the total number of bytes written by n.
+// It returns the number of bytes written and any error encountered that caused
+// the write to stop early.
+// Additionally, it increases the total number of bytes written by n.
 func (cw *countingWriter) Write(p []byte) (int, error) {
 	n, err := cw.w.Write(p)
 	cw.cnt += uint64(n)
@@ -61,7 +61,7 @@ func (cw *countingWriter) Write(p []byte) (int, error) {
 // WriteString writes s to the underlying Writer.
 // It returns the number of bytes written and any error encountered that caused
 // the write to stop early.
-// Additionally it increases the total number of bytes written by n.
+// Additionally, it increases the total number of bytes written by n.
 func (cw *countingWriter) WriteString(s string) (n int, err error) {
 	n, err = io.WriteString(cw.w, s)
 	cw.cnt += uint64(n)

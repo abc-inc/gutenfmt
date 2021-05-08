@@ -40,10 +40,11 @@ func TestTab_Write(t *testing.T) {
 		{"string", "∮∯∰", "∮∯∰"},
 		{"empty_array", [0]string{}, "^$"},
 		{"int_slice", []int{1, 2, 3}, "1\n2\n3"},
-		{"struct", NewUser("John", "Doe"), "username   John Doe   \nemail      john.doe@local"},
+		{"struct", NewUser("John", "Doe"), "username John Doe \nemail    john.doe@local"},
 		{"mixed_array", []interface{}{[0]string{}, true, -42, "a", NewUser("f", "l")}, "^\ntrue\n-42\na\nf l <f.l@local>$"},
-		{"map", map[string]interface{}{"a a": 1, ":": ":"}, "(a a   1   \n:     :   )|(:     :   \na a   1   )"},
-		{"map_slice", []map[string]interface{}{{"a": 1, "b": 2}, {"b": 3, "a": 4}}, "(a   b   \n1   2   \n4   3)|(b   a   \n2   1   \n3   4)"},
+		{"map", map[string]interface{}{"a a": 1, ":": ":"}, "(a a 1   \n:   :   )|(:   :   \na a 1   )"},
+		{"map_slice", []map[string]interface{}{{"a": 1, "b": 2}, {"b": 3, "a": 4}},
+			"(a   b   \n1   2   \n4   3)|(b   a   \n2   1   \n3   4)"},
 	}
 
 	for _, tt := range tests {
@@ -63,36 +64,36 @@ func TestTab_WriteAllTypes(t *testing.T) {
 
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
 
-	Equal(t, `DefName          DefName
-OmitEmpty        OmitEmpty
-custom           CustOmitEmpty
+	Equal(t, `DefName        DefName
+OmitEmpty      OmitEmpty
+custom         CustOmitEmpty
 EmptyOmitEmpty`+`
-Bool             true
-Int              -4
-Int8             -8
-Int16            -16
-Int32            -32
-Int64            -64
-Uint             4
-Uint8            8
-Uint16           16
-Uint32           32
-Uint64           64
-Uintptr          128
-Float32          3.4028234663852886e+38
-Float64          1.7976931348623157e+308
-Complex64        (0-2.7100000381469727i)
-Complex128       (0-3.14i)
-Array            a b`+`
-Chan`+`
-Func             github.com/abc-inc/gutenfmt/gfmt_test.NewUser
+Bool           true
+Int            -4
+Int8           -8
+Int16          -16
+Int32          -32
+Int64          -64
+Uint           4
+Uint8          8
+Uint16         16
+Uint32         32
+Uint64         64
+Uintptr        128
+Float32        3.4028235e+38
+Float64        1.7976931348623157e+308
+Complex64      (0-2.71i)
+Complex128     (0-3.14i)
+Array          a b`+`
+Chan           chan<- int`+`
+Func           github.com/abc-inc/gutenfmt/gfmt_test.NewUser
 Interface`+`
-Map              map[]
-Ptr              f l <f.l@local>
-Slice            a b`+`
+Map            map[]
+Ptr            f l <f.l@local>
+Slice          a b`+`
 String`+`
-Struct           f l <f.l@local>
-StructSlice      af al <af.al@local> bf bl <bf.bl@local>`,
+Struct         f l <f.l@local>
+StructSlice    af al <af.al@local> bf bl <bf.bl@local>`,
 		s)
 }
 
@@ -100,7 +101,7 @@ func TestTab_WriteStruct(t *testing.T) {
 	b := &strings.Builder{}
 	_, err := NewTab(b).Write(NewUser("John", "Doe"))
 	NoError(t, err)
-	Equal(t, "username   John Doe   \nemail      john.doe@local", b.String())
+	Equal(t, "username John Doe \nemail    john.doe@local", b.String())
 }
 
 func TestTab_WriteMapSliceCustom(t *testing.T) {

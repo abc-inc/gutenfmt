@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
-	"strconv"
-	"strings"
 )
 
 // IsContainerType returns true if a type is kind of a "container".
@@ -29,9 +27,10 @@ import (
 // Note that "container" is not an official classification.
 // In this context, it represents a subset of composite types, which can hold
 // a certain amount of elements that can be accessed in arbitrary order,
-// namely array, struct, slice and map.
+// namely, array, struct, slice and map.
 func IsContainerType(k reflect.Kind) bool {
-	return k == reflect.Struct || k == reflect.Slice || k == reflect.Map || k == reflect.Array
+	return k == reflect.Struct || k == reflect.Slice ||
+		k == reflect.Map || k == reflect.Array
 }
 
 // TypeName returns the type's name.
@@ -47,52 +46,40 @@ func TypeName(typ reflect.Type) string {
 	return n
 }
 
-// TODO: delete StrVal or strFormat
-// TODO: rename to scalar??? GH?
-// TODO: use always sprint()?
-
-func StrVal(i interface{}) string {
-	return strFormat(reflect.ValueOf(i))
-}
-
-func strFormat(v reflect.Value) string {
-	switch v.Kind() {
-	case reflect.Bool:
-		return strconv.FormatBool(v.Bool())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return strconv.FormatInt(v.Int(), 10)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return strconv.FormatUint(v.Uint(), 10)
-	case reflect.Uintptr:
-		return fmt.Sprint(reflect.Indirect(v).Interface())
-	case reflect.Float32, reflect.Float64:
-		return fmt.Sprint(v.Float())
-	case reflect.Complex64, reflect.Complex128:
-		return fmt.Sprint(v.Complex())
-	case reflect.Array:
-		return strings.Trim(fmt.Sprint(v.Interface()), "[]")
-	case reflect.Chan:
+// ToString returns a human-readable string representation of i.
+//
+// The following types are treated specially:
+//
+// - arrays, slices: surrounding [] are removed
+//
+// - functions: best effort, since functions could be anonymous
+//
+// - pointers: dereferenced before determining their string representation
+//
+// - others: formatted using the default formats like fmt.Sprint
+func ToString(i interface{}) string {
+	if i == nil {
 		return ""
+	}
+	typ := reflect.TypeOf(i)
+	switch typ.Kind() {
+	case reflect.Array, reflect.Slice:
+		s := fmt.Sprint(i)
+		return s[1 : len(s)-1]
+	case reflect.Chan:
+		return typ.String()
 	case reflect.Func:
-		return funcName(v)
-	case reflect.Interface:
-		return fmt.Sprint(v.Interface())
-	case reflect.Map:
-		return fmt.Sprint(v.Interface())
+		return funcName(reflect.ValueOf(i))
 	case reflect.Ptr:
-		return strFormat(reflect.Indirect(v))
-	case reflect.Slice:
-		return strings.Trim(fmt.Sprint(v.Interface()), "[]")
+		return ToString(reflect.Indirect(reflect.ValueOf(i)).Interface())
 	case reflect.String:
-		return v.String()
-	case reflect.Struct:
-		return fmt.Sprint(v.Interface())
-	// case reflect.UnsafePointer:
+		return i.(string)
 	default:
-		panic(fmt.Sprintf("Cannot convert %s (%v)", reflect.TypeOf(v).Name(), v.Type()))
+		return fmt.Sprint(i)
 	}
 }
 
+// funcName returns the name of the function f points to.
 func funcName(f reflect.Value) string {
 	return runtime.FuncForPC(f.Pointer()).Name()
 }

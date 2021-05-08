@@ -58,9 +58,10 @@ func ExampleJSON_Write_structSlice() {
 func ExampleTab_Write_struct() {
 	b := &strings.Builder{}
 	f := NewTab(b)
-	f.Renderer.SetRenderer(reflect.TypeOf(t).Name(), renderer.AsTab(renderer.RendererFunc(func(i interface{}) (string, error) {
+	r := renderer.AsTab(renderer.RendererFunc(func(i interface{}) (string, error) {
 		return fmt.Sprintf("name\t%s\t", i.(Team).Name()), nil
-	})))
+	}))
+	f.Renderer.SetRenderer(reflect.TypeOf(t).Name(), r)
 
 	_, _ = f.Write(u)
 	_, _ = f.Write("\n")
@@ -70,9 +71,9 @@ func ExampleTab_Write_struct() {
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
 	fmt.Println(s)
 	// Output:
-	// username   John Doe
-	// email      john.doe@local
-	// name   SUPPORT
+	// username John Doe
+	// email    john.doe@local
+	// name SUPPORT
 }
 
 func ExampleTab_Write_structSlice() {
@@ -98,12 +99,12 @@ func ExampleTab_Write_structSlice() {
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
 	fmt.Println(s)
 	// Output:
-	// username   email
-	// John Doe   john.doe@local
-	// John Doe   john.doe@local
-	// name      members
-	// SUPPORT   2
-	// SUPPORT   2
+	// username email
+	// John Doe john.doe@local
+	// John Doe john.doe@local
+	// name    members
+	// SUPPORT 2
+	// SUPPORT 2
 }
 
 func ExampleText_Write_struct() {

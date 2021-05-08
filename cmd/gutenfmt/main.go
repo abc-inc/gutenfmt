@@ -28,7 +28,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gutenfmt",
 	Short: "Formats the input as JSON, key-value pairs or table.",
@@ -38,11 +37,9 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		ff, err := cmd.Flags().GetString("format")
-		if err != nil {
+		ff, err := cmd.Flags().GetString("output")
+		if err != nil || ff == "" {
 			_ = cmd.Help()
 			os.Exit(1)
 		}
@@ -50,40 +47,44 @@ to quickly create a Cobra application.`,
 		m := map[string]interface{}{}
 		in := bufio.NewScanner(os.Stdin)
 		for in.Scan() {
-			b := []byte(in.Text())
+			s := in.Text()
+			b := []byte(s)
 			if json.Valid(b) {
 				if err := json.Unmarshal(b, &m); err != nil {
 					log.Fatalln("Cannot output JSON:", err)
 				}
-			} else if strings.ContainsAny(in.Text(), "=:\t") {
-				kv := strings.SplitN(in.Text(), "=", 2)
-				m[kv[0]] = kv[1]
+			} else if idx := strings.IndexAny(s, "=:\t"); idx > 0 {
+				m[s[:idx]] = s[idx+1:]
 			}
 		}
 
 		var f gfmt.GenericWriter
 		switch strings.ToLower(ff) {
-		case "coljson":
-			f = gfmt.NewPrettyJSON(os.Stdout)
 		case "json":
 			f = gfmt.NewJSON(os.Stdout)
+		case "jsonc":
+			f = gfmt.NewPrettyJSON(os.Stdout)
+		case "table":
+			f = gfmt.NewTab(os.Stdout)
 		case "text":
 			f = gfmt.NewText(os.Stdout)
-		case "tab":
-			f = gfmt.NewTab(os.Stdout)
+		case "tsv":
+			f = gfmt.NewText(os.Stdout)
+			f.(*gfmt.Text).Sep = "\t"
 		default:
 			_ = cmd.Help()
 			os.Exit(1)
 		}
 
-		if _, err := f.Write([]map[string]interface{}{m}); err != nil {
+		if _, err := f.Write(m); err != nil {
 			log.Fatalln("Cannot write output:", err)
 		}
 	},
 }
 
 func main() {
-	rootCmd.Flags().String("format", "", "todo")
+	rootCmd.Flags().StringP("output", "o", "",
+		"The formatting style for command output (json, jsonc, table, text, tsv).")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

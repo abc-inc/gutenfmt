@@ -14,31 +14,18 @@
  * limitations under the License.
  */
 
-package renderer
+package main
 
 import (
-	"reflect"
-	"strings"
+	"golang.org/x/sys/windows"
+	"os"
 )
 
-func jsonMetadata(typ reflect.Type) ([]string, []string) {
-	var fns []string
-	var pns []string
-	for idx := 0; idx < typ.NumField(); idx++ {
-		f := typ.Field(idx)
-		if n := jsonPropName(f); n != "" {
-			fns = append(fns, f.Name)
-			pns = append(pns, n)
-		}
+func init() {
+	stdout := windows.Handle(os.Stdout.Fd())
+	var originalMode uint32
+	if err := windows.GetConsoleMode(stdout, &originalMode); err != nil {
+		_ = windows.SetConsoleMode(stdout, originalMode|windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+		// If the terminal does not support colors, silently ignore the error. 
 	}
-	return fns, pns
-}
-
-func jsonPropName(f reflect.StructField) string {
-	if n, ok := f.Tag.Lookup("json"); strings.HasPrefix(n, "-") || f.PkgPath != "" {
-		return ""
-	} else if n = strings.SplitN(n, ",", 2)[0]; ok && n != "" {
-		return n
-	}
-	return f.Name
 }

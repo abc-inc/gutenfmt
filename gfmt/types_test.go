@@ -35,7 +35,7 @@ func Test_Write_Types(t *testing.T) {
 	}
 	type unit struct {
 		b *strings.Builder
-		w GenericWriter
+		f GenericWriter
 	}
 
 	m := make(map[string]int)
@@ -90,48 +90,48 @@ func Test_Write_Types(t *testing.T) {
 		}
 
 		for _, u := range us {
-			t.Run(tt.kind.String()+"_"+reflect.TypeOf(u.w).Elem().Name(), func(t *testing.T) {
+			t.Run(tt.kind.String()+"_"+reflect.TypeOf(u.f).Elem().Name(), func(t *testing.T) {
 				want := tt.out
 
 				postProc := func(s string) string { return s }
-				if _, ok := u.w.(*Text); ok {
+				if _, ok := u.f.(*Text); ok {
 					postProc = func(s string) string { return strings.Trim(strings.ReplaceAll(s, ",", "\n"), "[]") }
-				} else if _, ok := u.w.(*Tab); ok {
+				} else if _, ok := u.f.(*Tab); ok {
 					postProc = func(s string) string { return strings.ReplaceAll(s, ",", "\n") }
 				}
 
-				_, err := u.w.Write(tt.in)
+				_, err := u.f.Write(tt.in)
 				NoError(t, err)
 				Equal(t, want, u.b.String())
 
-				if f, ok := u.w.(*JSON); ok && f.Style != "" {
+				if f, ok := u.f.(*JSON); ok && f.Style != "" {
 					// pretty JSON is too hard to verify, so we skip further tests
 					return
 				}
 
-				if _, ok := u.w.(*JSON); ok && tt.in == want {
+				if _, ok := u.f.(*JSON); ok && tt.in == want {
 					// JSON quotes strings, so the expected output needs to be quoted
 					want = "\"" + want + "\""
 				}
 
 				// array
 				u.b.Reset()
-				_, err = u.w.Write([2]interface{}{tt.in, tt.in})
+				_, err = u.f.Write([2]interface{}{tt.in, tt.in})
 				NoError(t, err)
 				Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
 
 				// slice
 				u.b.Reset()
-				_, err = u.w.Write([]interface{}{tt.in, tt.in})
+				_, err = u.f.Write([]interface{}{tt.in, tt.in})
 				NoError(t, err)
 				Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
 
 				// map
-				if _, ok := u.w.(*JSON); !ok {
+				if _, ok := u.f.(*JSON); !ok {
 					// JSON does not support arbitrary maps
 
 					u.b.Reset()
-					_, err = u.w.Write(map[interface{}]interface{}{tt.in: tt.in})
+					_, err = u.f.Write(map[interface{}]interface{}{tt.in: tt.in})
 					NoError(t, err)
 					Equal(t, postProc(fmt.Sprintf("%s:%s", want, want)), u.b.String())
 				}

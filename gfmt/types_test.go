@@ -35,7 +35,7 @@ func Test_Write_Types(t *testing.T) {
 	}
 	type unit struct {
 		b *strings.Builder
-		f GenericWriter
+		w Writer
 	}
 
 	m := make(map[string]int)
@@ -59,83 +59,94 @@ func Test_Write_Types(t *testing.T) {
 		{reflect.Float64, math.MaxFloat64, fmt.Sprint(math.MaxFloat64)},
 		// {reflect.Complex64, complex64(-2.71i), "(0-2.71i)"},   // not supported by JSON
 		// {reflect.Complex128, complex128(-3.14i), "(0-3.14i)"}, // not supported by JSON
-		// {reflect.Array, [3]string{"a", "b", "c"}, "[a b c]"},
-		// {reflect.Chan, true, "true"},                          // does not make sense
+		// {reflect.Chan, ch, "chan<- bool"},                     // not supported by JSON
 		// {reflect.Func, Test_Write_Types, "Test_Write_Types"},  // not supported by JSON
-		// {reflect.Interface, true, "true"},
-		// {reflect.Map, m, "{}"},
-		// {reflect.Ptr, true, "true"},
-		// {reflect.Slice, true, "true"},
 		{reflect.String, "str", "str"},
-		// {reflect.Struct, true, "true"},
-		// {reflect.UnsafePointer, true, "true"},
 	}
 
 	for _, tt := range tests {
 		sPrettyJSON := &strings.Builder{}
 		sJSON := &strings.Builder{}
-		// sTab := &strings.Builder{}
+		sTab := &strings.Builder{}
 		sText := &strings.Builder{}
 
 		prettyJSON := NewPrettyJSON(sPrettyJSON)
 		json := NewJSON(sJSON)
-		// tab := NewTab(sTab)
+		tab := NewTab(sTab)
 		text := NewText(sText)
 
 		us := []unit{
 			{sPrettyJSON, prettyJSON},
 			{sJSON, json},
-			// {sTab, tab},
+			{sTab, tab},
 			{sText, text},
 		}
 
 		for _, u := range us {
-			t.Run(tt.kind.String()+"_"+reflect.TypeOf(u.f).Elem().Name(), func(t *testing.T) {
+			t.Run(tt.kind.String()+"_"+reflect.TypeOf(u.w).Elem().Name(), func(t *testing.T) {
 				want := tt.out
 
 				postProc := func(s string) string { return s }
-				if _, ok := u.f.(*Text); ok {
-					postProc = func(s string) string { return strings.Trim(strings.ReplaceAll(s, ",", "\n"), "[]") }
-				} else if _, ok := u.f.(*Tab); ok {
-					postProc = func(s string) string { return strings.ReplaceAll(s, ",", "\n") }
+				if _, ok := u.w.(*Text); ok {
+					postProc = unJSON
+				} else if _, ok := u.w.(*Tab); ok {
+					postProc = normalizeTable
 				}
 
-				_, err := u.f.Write(tt.in)
+				_, err := u.w.Write(tt.in)
 				NoError(t, err)
 				Equal(t, want, u.b.String())
 
-				if f, ok := u.f.(*JSON); ok && f.Style != "" {
+				if f, ok := u.w.(*JSON); ok && f.Style != "" {
 					// pretty JSON is too hard to verify, so we skip further tests
 					return
 				}
 
-				if _, ok := u.f.(*JSON); ok && tt.in == want {
+				if _, ok := u.w.(*JSON); ok && tt.in == want {
 					// JSON quotes strings, so the expected output needs to be quoted
 					want = "\"" + want + "\""
 				}
 
 				// array
 				u.b.Reset()
-				_, err = u.f.Write([2]interface{}{tt.in, tt.in})
+				_, err = u.w.Write([2]interface{}{tt.in, tt.in})
 				NoError(t, err)
 				Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
 
 				// slice
 				u.b.Reset()
-				_, err = u.f.Write([]interface{}{tt.in, tt.in})
+				_, err = u.w.Write([]interface{}{tt.in, tt.in})
 				NoError(t, err)
 				Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
 
 				// map
-				if _, ok := u.f.(*JSON); !ok {
+				if _, ok := u.w.(*JSON); !ok {
 					// JSON does not support arbitrary maps
-
 					u.b.Reset()
-					_, err = u.f.Write(map[interface{}]interface{}{tt.in: tt.in})
+					_, err = u.w.Write(map[interface{}]interface{}{tt.in: tt.in})
 					NoError(t, err)
 					Equal(t, postProc(fmt.Sprintf("%s:%s", want, want)), u.b.String())
 				}
 			})
 		}
 	}
+}
+
+// unJSON removes JSON-specific formatting such as [] and replaces comma with new line.
+func unJSON(s string) string {
+	return strings.Trim(strings.ReplaceAll(s, ",", "\n"), "[]")
+}
+
+// normalizeTable makes tabular output comparable by removing specific formatting.
+func normalizeTable(s string) string {
+	b := strings.Builder{}
+	for _, p := range strings.Split(unJSON(s), ":") {
+		b.WriteString(fmt.Sprintf("%-3s ", p))
+	}
+	if strings.Contains(s, ":") {
+		// input was an array
+		return b.String() + "\n"
+	}
+	// input was a single value
+	return strings.TrimSpace(b.String())
 }

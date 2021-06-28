@@ -18,10 +18,14 @@ package gfmt
 
 import (
 	"io"
+
+	"github.com/alecthomas/chroma"
+	"github.com/alecthomas/chroma/formatters"
+	"github.com/alecthomas/chroma/styles"
 )
 
-// GenericWriter is the interface that wraps the generic Write method.
-type GenericWriter interface {
+// Writer is the interface that wraps the generic Write method.
+type Writer interface {
 	// Write writes i to the underlying output stream.
 	//
 	// It returns the number of bytes written and any error encountered that
@@ -30,7 +34,7 @@ type GenericWriter interface {
 	Write(i interface{}) (int, error)
 }
 
-// countingWriter counts the number of bytes written to the underlying writer.
+// countingWriter counts the number of bytes written to the underlying Writer.
 //
 // Note that direct writes to the wrapped Writer do not increase the counter.
 type countingWriter struct {
@@ -39,7 +43,6 @@ type countingWriter struct {
 }
 
 // wrapCountingWriter encapsulates the given Writer.
-//
 // If w is already a countingWriter, it is returned instead.
 func wrapCountingWriter(w io.Writer) *countingWriter {
 	if cw, ok := w.(*countingWriter); ok {
@@ -66,4 +69,21 @@ func (cw *countingWriter) WriteString(s string) (n int, err error) {
 	n, err = io.WriteString(cw.w, s)
 	cw.cnt += uint64(n)
 	return n, err
+}
+
+// highlight formats text in the given format and writes it to the Writer.
+// If an unknown style is specified, a fallback style is used instead.
+func highlight(w io.Writer, l chroma.Lexer, text, style string) error {
+	s := styles.Get(style)
+	if s == nil {
+		s = styles.Fallback
+	}
+
+	l = chroma.Coalesce(l)
+	it, err := l.Tokenise(nil, text)
+	if err != nil {
+		return err
+	}
+
+	return formatters.TTY8.Format(w, s, it)
 }

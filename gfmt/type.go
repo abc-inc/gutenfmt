@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package main
+package gfmt
 
-import (
-	"golang.org/x/sys/windows"
-	"os"
-)
+import "reflect"
 
-func init() {
-	stdout := windows.Handle(os.Stdout.Fd())
-	var originalMode uint32
-	if err := windows.GetConsoleMode(stdout, &originalMode); err != nil {
-		_ = windows.SetConsoleMode(stdout, originalMode|windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING)
-		// If the terminal does not support colors, silently ignore the error. 
-	}
+// isContainerType returns true if a type is kind of a "container".
+//
+// Note that "container" is not an official classification.
+// In this context, it represents a subset of composite types, which can hold
+// a certain amount of elements that can be accessed in arbitrary order,
+// namely, array, struct, slice and map.
+func isContainerType(k reflect.Kind) bool {
+	return k == reflect.Struct || k == reflect.Slice ||
+		k == reflect.Map || k == reflect.Array
 }

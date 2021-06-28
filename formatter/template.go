@@ -14,30 +14,21 @@
  * limitations under the License.
  */
 
-package renderer_test
+package formatter
 
 import (
 	"strings"
-	"testing"
-
-	. "github.com/abc-inc/gutenfmt/renderer"
-	. "github.com/stretchr/testify/require"
+	"text/template"
 )
 
-func TestCompRenderer_Render(t *testing.T) {
-	r := NewComp()
-	_, err := r.Render("x")
-	Error(t, err)
-
-	r.SetRendererFunc("string", func(i interface{}) (string, error) {
-		return strings.ToUpper(i.(string)), nil
+// FromTemplate returns a new Formatter that applies a parsed template to the input.
+// If an error occurs executing the template, execution stops and no output is returned.
+func FromTemplate(tmpl *template.Template) Formatter {
+	return Func(func(i interface{}) (string, error) {
+		b := &strings.Builder{}
+		if err := tmpl.Execute(b, i); err != nil {
+			return "", err
+		}
+		return b.String(), nil
 	})
-	s, err := r.Render("x")
-	NoError(t, err)
-	Equal(t, "X", s)
-
-	r.SetRenderer("string", NoopRenderer())
-	s, err = r.Render("x")
-	NoError(t, err)
-	Equal(t, "", s)
 }

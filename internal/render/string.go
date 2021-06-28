@@ -14,37 +14,13 @@
  * limitations under the License.
  */
 
-package meta
+package render
 
 import (
 	"fmt"
 	"reflect"
 	"runtime"
 )
-
-// IsContainerType returns true if a type is kind of a "container".
-//
-// Note that "container" is not an official classification.
-// In this context, it represents a subset of composite types, which can hold
-// a certain amount of elements that can be accessed in arbitrary order,
-// namely, array, struct, slice and map.
-func IsContainerType(k reflect.Kind) bool {
-	return k == reflect.Struct || k == reflect.Slice ||
-		k == reflect.Map || k == reflect.Array
-}
-
-// TypeName returns the type's name.
-// If the type cannot be determined e.g., []interface{}, a string representation
-// is returned instead.
-//
-// Note that a string representation is not necessarily unique among types.
-func TypeName(typ reflect.Type) string {
-	n := typ.Name()
-	if n == "" {
-		n = typ.String()
-	}
-	return n
-}
 
 // ToString returns a human-readable string representation of i.
 //

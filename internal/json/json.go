@@ -1,3 +1,5 @@
+// +build !jsoniter
+
 /**
  * Copyright 2021 The gutenfmt authors
  *
@@ -14,19 +16,11 @@
  * limitations under the License.
  */
 
-package renderer_test
+// Package json encapsulates JSON processing and enables gutenfmt to work with
+// different JSON libraries, when being used as a library.
+package json
 
-import (
-	"testing"
-	"text/template"
+import "encoding/json"
 
-	. "github.com/abc-inc/gutenfmt/renderer"
-	. "github.com/stretchr/testify/require"
-)
-
-func TestFromTemplate(t *testing.T) {
-	text := "mailto:{{.Mail}}\nDear {{.Name}}"
-	f := FromTemplate(template.Must(template.New("letter").Parse(text)))
-	s, _ := f.Render(map[string]string{"Name": "Jane Doe", "Mail": "jane.doe@local"})
-	Equal(t, "mailto:jane.doe@local\nDear Jane Doe", s)
-}
+// NewEncoder is exported by internal/json package.
+var NewEncoder = json.NewEncoder

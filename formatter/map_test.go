@@ -14,46 +14,46 @@
  * limitations under the License.
  */
 
-package renderer_test
+package formatter_test
 
 import (
 	"reflect"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/renderer"
+	. "github.com/abc-inc/gutenfmt/formatter"
 	. "github.com/stretchr/testify/require"
 )
 
 var m = map[string]bool{"y": true, "n": false}
 
 func TestFromMap(t *testing.T) {
-	r := FromMap("\t", "\t\n")
-	s, _ := r.Render(m)
+	f := FromMap("\t", "\t\n")
+	s, _ := f.Format(m)
 	Regexp(t, "(y\ttrue\t\nn\tfalse)|(n\tfalse\t\ny\ttrue)", s)
 }
 
 func TestFromMapKeys_duplicate(t *testing.T) {
-	r := FromMapKeys("\t", "\t\n", reflect.ValueOf("y"), reflect.ValueOf("y"))
-	s, _ := r.Render(m)
+	f := FromMapKeys("\t", "\t\n", reflect.ValueOf("y"), reflect.ValueOf("y"))
+	s, _ := f.Format(m)
 	Equal(t, "y\ttrue\t\ny\ttrue\t\n", s)
 
-	r = FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("y"), reflect.ValueOf("y"))
-	s, _ = r.Render([]map[string]bool{m, m})
+	f = FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("y"), reflect.ValueOf("y"))
+	s, _ = f.Format([]map[string]bool{m, m})
 	Equal(t, "y\ty\t\ntrue\ttrue\t\ntrue\ttrue", s)
 }
 
 func TestFromMapKeys_invalidKey(t *testing.T) {
-	r := FromMapKeys("\t", "\t\n", reflect.ValueOf("t"))
-	s, _ := r.Render(m)
+	f := FromMapKeys("\t", "\t\n", reflect.ValueOf("t"))
+	s, _ := f.Format(m)
 	Equal(t, "t\t\t\n", s)
 
-	r = FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("t"))
-	s, _ = r.Render([]map[string]bool{m, m})
+	f = FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("t"))
+	s, _ = f.Format([]map[string]bool{m, m})
 	Equal(t, "t\t\n\t\n", s)
 }
 
 func TestFromMapSlice(t *testing.T) {
-	r := FromMapSlice("\t", "\t\n", reflect.TypeOf(m))
-	s, _ := r.Render([]map[string]bool{m})
+	f := FromMapSlice("\t", "\t\n")
+	s, _ := f.Format([]map[string]bool{m})
 	Regexp(t, "(y\tn\t\ntrue\tfalse)|(n\ty\t\nfalse\ttrue)", s)
 }

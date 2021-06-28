@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package renderer_test
+package formatter_test
 
 import (
 	"reflect"
 	"testing"
 	"time"
 
-	. "github.com/abc-inc/gutenfmt/renderer"
+	. "github.com/abc-inc/gutenfmt/formatter"
 	. "github.com/stretchr/testify/require"
 )
 
 func TestFromStruct(t *testing.T) {
 	u := NewUser("Jane", "Doe")
-	r := FromStruct(": ", ", ", reflect.TypeOf(u))
-	s, _ := r.Render(u)
+	f := FromStruct(": ", ", ", reflect.TypeOf(u))
+	s, _ := f.Format(u)
 	Equal(t, "username: Jane Doe, email: jane.doe@local", s)
 }
 
@@ -42,22 +42,22 @@ func TestFromStruct_Anonymous(t *testing.T) {
 	m := &Model{"Company", "Awesome", 5}
 
 	// The embedded struct pointer will be handled properly.
-	// Although, it will be rendered with its default string representation.
+	// Although, it will be formatted with its default string representation.
 	car := struct {
 		*Model      `json:"Type,omitempty"`
 		Mileage     int `json:"Miles"`
 		serviceDate time.Time
 	}{m, 1337, time.Now()}
 
-	r := FromStruct(": ", ", ", reflect.TypeOf(car))
-	s, err := r.Render(car)
+	f := FromStruct(": ", ", ", reflect.TypeOf(car))
+	s, err := f.Format(car)
 	NoError(t, err)
 	Equal(t, "Type: {Company Awesome 5}, Miles: 1337", s)
 }
 
 func TestFromStructSlice(t *testing.T) {
 	u := NewUser("Jane", "Doe")
-	r := FromStructSlice(" | ", "\n", reflect.TypeOf(u))
-	s, _ := r.Render([]*User{u})
+	f := FromStructSlice(" | ", "\n", reflect.TypeOf(u))
+	s, _ := f.Format([]*User{u})
 	Equal(t, "username | email\nJane Doe | jane.doe@local", s)
 }

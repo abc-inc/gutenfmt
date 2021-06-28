@@ -1,3 +1,5 @@
+// +build jsoniter
+
 /**
  * Copyright 2021 The gutenfmt authors
  *
@@ -14,24 +16,11 @@
  * limitations under the License.
  */
 
-package renderer_test
+package json
 
-import (
-	"reflect"
-	"testing"
+import jsoniter "github.com/json-iterator/go"
 
-	. "github.com/abc-inc/gutenfmt/renderer"
-	. "github.com/stretchr/testify/require"
-)
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-func TestAsTab(t *testing.T) {
-	ks := []reflect.Value{reflect.ValueOf("a"), reflect.ValueOf("long_key")}
-	m := map[string]int{"a": 1, "long_key": 2}
-
-	r := FromMapKeys("\t", "\t\n", ks...)
-	s, _ := r.Render(m)
-	Equal(t, "a\t1\t\nlong_key\t2\t\n", s)
-
-	s, _ = AsTab(r).Render(m)
-	Equal(t, "a        1   \nlong_key 2   \n", s)
-}
+// NewEncoder is exported by internal/json package.
+var NewEncoder = json.NewEncoder

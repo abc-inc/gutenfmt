@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package renderer
+package formatter_test
 
 import (
-	"strings"
+	"testing"
 	"text/template"
+
+	. "github.com/abc-inc/gutenfmt/formatter"
+	. "github.com/stretchr/testify/require"
 )
 
-// FromTemplate returns a new Renderer that applies a parsed template to the input.
-// If an error occurs executing the template, execution stops and no output is returned.
-func FromTemplate(tmpl *template.Template) Renderer {
-	return RendererFunc(func(i interface{}) (string, error) {
-		b := &strings.Builder{}
-		if err := tmpl.Execute(b, i); err != nil {
-			return "", err
-		}
-		return b.String(), nil
-	})
+func TestFromTemplate(t *testing.T) {
+	text := "mailto:{{.Mail}}\nDear {{.Name}}"
+	f := FromTemplate(template.Must(template.New("letter").Parse(text)))
+	s, _ := f.Format(map[string]string{"Name": "Jane Doe", "Mail": "jane.doe@local"})
+	Equal(t, "mailto:jane.doe@local\nDear Jane Doe", s)
 }

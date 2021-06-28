@@ -22,9 +22,9 @@ import (
 )
 
 type User struct {
-	Name     string `json:"username"`
-	Mail     string `json:"email"`
-	Password string `json:"-"`
+	Name     string `json:"username" yaml:"Username"`
+	Mail     string `json:"email" yaml:"E-Mail"`
+	Password string `json:"-" yaml:"-"`
 }
 
 func NewUser(fName, lName string) *User {
@@ -57,11 +57,11 @@ func (t Team) Members() []User {
 }
 
 type JSONTypes struct {
-	DefName        string `json:""`
-	Skip           string `json:"-"`
-	OmitEmpty      string `json:",omitempty"`
-	CustOmitEmpty  string `json:"custom,omitempty"`
-	EmptyOmitEmpty string `json:",omitempty"`
+	DefName        string `json:"" yaml:""`
+	Skip           string `json:"-" yaml:"-"`
+	OmitEmpty      string `json:",omitempty" yaml:",omitempty"`
+	CustOmitEmpty  string `json:"custom,omitempty" yaml:"custom,omitempty"`
+	EmptyOmitEmpty string `json:",omitempty" yaml:",omitempty"`
 	Bool           bool
 	Int            int
 	Int8           int8
@@ -87,11 +87,11 @@ type JSONTypes struct {
 }
 
 type AllTypes struct {
-	DefName        string `json:""`
-	Skip           string `json:"-"`
-	OmitEmpty      string `json:",omitempty"`
-	CustOmitEmpty  string `json:"custom,omitempty"`
-	EmptyOmitEmpty string `json:",omitempty"`
+	DefName        string `json:"" yaml:""`
+	Skip           string `json:"-" yaml:"-"`
+	OmitEmpty      string `json:",omitempty" yaml:",omitempty"`
+	CustOmitEmpty  string `json:"custom,omitempty" yaml:"custom,omitempty"`
+	EmptyOmitEmpty string `json:",omitempty" yaml:",omitempty"`
 	Bool           bool
 	Int            int
 	Int8           int8

@@ -20,47 +20,35 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"strings"
 
 	"github.com/abc-inc/gutenfmt/formatter"
-	"github.com/abc-inc/gutenfmt/internal/json"
 	"github.com/abc-inc/gutenfmt/internal/render"
-	"github.com/alecthomas/chroma/lexers/j"
-	"github.com/mattn/go-isatty"
+	"github.com/alecthomas/chroma/lexers/y"
+	"gopkg.in/yaml.v3"
 )
 
-// JSON is a generic Writer that formats arbitrary values as JSON.
-type JSON struct {
+// YAML is a generic Writer that formats arbitrary values as YSON.
+type YAML struct {
 	w         io.Writer
 	Formatter *formatter.CompFormatter
-	Indent    string
+	Indent    int
 	Style     string
 }
 
-// NewAutoJSON creates and initializes new JSON Writer with or without formatting.
-// The JSON encoder uses indentation and ANSII escape sequences are used for coloring,
-// if the underlying Writer is stdout on an interactive terminal.
-func NewAutoJSON(w io.Writer) *JSON {
-	if w == os.Stdout && isatty.IsTerminal(os.Stdout.Fd()) {
-		return NewPrettyJSON(w)
-	}
-	return NewJSON(w)
+// NewYAML creates a new YAML Writer.
+func NewYAML(w io.Writer) *YAML {
+	return &YAML{w, formatter.NewComp(), 2, ""}
 }
 
-// NewJSON creates a new JSON Writer.
-func NewJSON(w io.Writer) *JSON {
-	return &JSON{w, formatter.NewComp(), "", ""}
+// NewPrettyYAML creates a new YAML Writer with indentation and coloring.
+func NewPrettyYAML(w io.Writer) *YAML {
+	return &YAML{w, formatter.NewComp(), 2, "native"}
 }
 
-// NewPrettyJSON creates a new JSON Writer with indentation and coloring.
-func NewPrettyJSON(w io.Writer) *JSON {
-	return &JSON{w, formatter.NewComp(), "  ", "native"}
-}
-
-// Write writes the JSON representation of the given value to the underlying Writer.
-func (w JSON) Write(i interface{}) (int, error) {
+// Write writes the YAML representation of the given value to the underlying Writer.
+func (w YAML) Write(i interface{}) (int, error) {
 	if i == nil {
 		return 0, nil
 	}
@@ -79,9 +67,8 @@ func (w JSON) Write(i interface{}) (int, error) {
 	}
 
 	b := &strings.Builder{}
-	e := json.NewEncoder(b)
-	e.SetEscapeHTML(false)
-	e.SetIndent("", w.Indent)
+	e := yaml.NewEncoder(b)
+	e.SetIndent(w.Indent)
 	if err := e.Encode(i); err != nil {
 		return 0, err
 	}
@@ -92,7 +79,7 @@ func (w JSON) Write(i interface{}) (int, error) {
 	}
 
 	cw := wrapCountingWriter(w.w)
-	if err := highlight(cw, j.JSON, s, w.Style); err != nil {
+	if err := highlight(cw, y.YAML, s, w.Style); err != nil {
 		return 0, err
 	}
 	return int(cw.cnt), nil

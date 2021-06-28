@@ -21,12 +21,12 @@ linters:
     - gocritic
     - gocyclo
     - goimports
-    - golint
     - gosec
     - lll
     - misspell
     - nolintlint
     - prealloc
+    - revive
     - stylecheck
     - unconvert
     - unparam

@@ -14,42 +14,14 @@
  * limitations under the License.
  */
 
-package meta
+package render_test
 
 import (
-	"encoding/json"
-	"math"
-	"reflect"
 	"testing"
 
+	. "github.com/abc-inc/gutenfmt/internal/render"
 	. "github.com/stretchr/testify/assert"
 )
-
-func TestTypeName(t *testing.T) {
-	type User struct {
-		Name     string `json:"username"`
-		Mail     string `json:"email"`
-		Password string `json:"-"`
-	}
-
-	s0 := struct{}{}
-	s1 := struct{ string }{""}
-	s2 := struct{ s string }{""}
-
-	Equal(t, "int", TypeName(reflect.TypeOf(math.MaxInt16)))
-	Equal(t, "int", TypeName(reflect.TypeOf(math.MaxInt32)))
-	Equal(t, "int", TypeName(reflect.TypeOf(math.MaxInt64)))
-	Equal(t, "string", TypeName(reflect.TypeOf("")))
-
-	Equal(t, "User", TypeName(reflect.TypeOf(User{})))
-	Equal(t, "Decoder", TypeName(reflect.TypeOf(json.Decoder{})))
-
-	Equal(t, "struct {}", TypeName(reflect.TypeOf(s0)))
-	Equal(t, "struct { string }", TypeName(reflect.TypeOf(s1)))
-	Equal(t, "struct { s string }", TypeName(reflect.TypeOf(s2)))
-
-	Equal(t, "map[interface {}]bool", TypeName(reflect.TypeOf(map[interface{}]bool{})))
-}
 
 func TestToString(t *testing.T) {
 	Equal(t, "", ToString(nil))
@@ -63,5 +35,5 @@ func TestToString(t *testing.T) {
 
 	Equal(t, "chan int", ToString(make(chan int)))
 
-	Regexp(t, `/internal/meta\.TestToString$`, ToString(TestToString))
+	Regexp(t, `/internal/render_test\.TestToString$`, ToString(TestToString))
 }

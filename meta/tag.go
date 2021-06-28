@@ -14,38 +14,57 @@
  * limitations under the License.
  */
 
-package renderer
+package meta
 
 import (
 	"reflect"
 	"strings"
 )
 
-// jsonMetadata returns struct fields and the JSON property names.
-func jsonMetadata(typ reflect.Type) ([]string, []string) {
+// TagResolver reads the tags of struct fields to extract metadata.
+//
+// TagName can be any of, but not limited to
+//
+// - json: used by the encoding/json package, detailed at json.Marshal()
+//
+// - xml: used by the encoding/xml package, detailed at xml.Marshal()
+//
+// - yaml: used by the gopkg.in/yaml.v3 package, detailed at yaml.Marshal()
+//
+// - db: used by the github.com/jmoiron/sqlx package
+//
+// - orm: used by the github.com/beego/beego/orm package
+//
+// - gorm: used by the github.com/go-gorm/gorm package
+type TagResolver struct {
+	// TagName is the name of the tag to lookup.
+	TagName string
+}
+
+// Lookup processes tags with a certain key in the fields' tag and uses the name, if defined.
+// As a special case, if the field tag is "-", the field is omitted.
+// Options like "omitempty" are ignored.
+func (r TagResolver) Lookup(typ reflect.Type) (fs []field) {
 	if typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
 
-	var fns []string
-	var pns []string
 	for idx := 0; idx < typ.NumField(); idx++ {
 		sf := typ.Field(idx)
-		if n := jsonPropName(sf); n != "" {
-			fns = append(fns, sf.Name)
-			pns = append(pns, n)
+		if n := r.fieldName(sf); n != "" {
+			fs = append(fs, field{sf.Name, n})
 		}
 	}
-	return fns, pns
+	return
 }
 
-// jsonPropName returns the JSON property name.
+// fieldName returns the name as set by the tag.
 //
 // As a special case, if the field tag is "-", an empty string is returned.
 // Likewise, unexported fields result in an empty string, regardless of it's field tag.
 //
 // The name may be empty in order to specify options without overriding the default field name.
-func jsonPropName(sf reflect.StructField) string {
+func (r TagResolver) fieldName(sf reflect.StructField) string {
 	isUnexported := sf.PkgPath != ""
 	if sf.Anonymous {
 		t := sf.Type
@@ -62,7 +81,7 @@ func jsonPropName(sf reflect.StructField) string {
 		// Ignore unexported non-embedded fields.
 		return ""
 	}
-	tag := sf.Tag.Get("json")
+	tag := sf.Tag.Get(r.TagName)
 	if tag == "-" {
 		return ""
 	}
@@ -80,7 +99,7 @@ func jsonPropName(sf reflect.StructField) string {
 	return name
 }
 
-// parseTag splits a struct field's json tag into its name and comma-separated options.
+// parseTag splits a struct field's tag into its name and comma-separated options.
 func parseTag(tag string) string {
 	if idx := strings.Index(tag, ","); idx != -1 {
 		return tag[:idx]

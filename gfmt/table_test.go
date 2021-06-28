@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/abc-inc/gutenfmt/renderer"
+	"github.com/abc-inc/gutenfmt/formatter"
 
 	. "github.com/abc-inc/gutenfmt/gfmt"
 	. "github.com/stretchr/testify/require"
@@ -109,16 +109,16 @@ func TestTab_WriteMapSliceCustom(t *testing.T) {
 	msi := []map[string]int{{"c": 1, "d": 2}, {"c": 3, "d": 4}}
 
 	b := &strings.Builder{}
-	f := NewTab(b)
-	f.Renderer.SetRenderer(reflect.TypeOf(mss).String(),
-		renderer.AsTab(renderer.FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("a"))))
+	w := NewTab(b)
+	w.Formatter.SetFormatter(reflect.TypeOf(mss).String(),
+		formatter.AsTab(formatter.FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("a"))))
 
-	_, err := f.Write(mss)
+	_, err := w.Write(mss)
 	NoError(t, err)
 	Equal(t, "a   \nw   \ny", b.String())
 
 	b.Reset()
-	_, err = f.Write(msi)
+	_, err = w.Write(msi)
 	NoError(t, err)
 	Regexp(t, "(c   d   \n1   2   \n3   4)|(d   c   \n2   1   \n4   3)", b.String())
 }

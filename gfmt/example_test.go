@@ -24,23 +24,23 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/abc-inc/gutenfmt/formatter"
 	. "github.com/abc-inc/gutenfmt/gfmt"
-	"github.com/abc-inc/gutenfmt/renderer"
 )
 
 var u = *NewUser("John", "Doe")
 var t = *NewTeam("Support", u, u)
 
 func ExampleJSON_Write_struct() {
-	f := NewJSON(os.Stdout)
-	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	w := NewJSON(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		tm := i.(Team)
 		return `{"team":"` + tm.Name() + `","members":` + strconv.Itoa(len(tm.Members())) + `}`, nil
 	})
 
-	_, _ = f.Write(u)
-	_, _ = f.Write("\n\n")
-	_, _ = f.Write(t)
+	_, _ = w.Write(u)
+	_, _ = w.Write("\n\n")
+	_, _ = w.Write(t)
 	// Output:
 	// {"username":"John Doe","email":"john.doe@local"}
 	//
@@ -48,24 +48,24 @@ func ExampleJSON_Write_struct() {
 }
 
 func ExampleJSON_Write_structSlice() {
-	f := NewJSON(os.Stdout)
+	w := NewJSON(os.Stdout)
 
-	_, _ = f.Write([]User{u, u})
+	_, _ = w.Write([]User{u, u})
 	// Output:
 	// [{"username":"John Doe","email":"john.doe@local"},{"username":"John Doe","email":"john.doe@local"}]
 }
 
 func ExampleTab_Write_struct() {
 	b := &strings.Builder{}
-	f := NewTab(b)
-	r := renderer.AsTab(renderer.RendererFunc(func(i interface{}) (string, error) {
+	w := NewTab(b)
+	f := formatter.AsTab(formatter.Func(func(i interface{}) (string, error) {
 		return fmt.Sprintf("name\t%s\t", i.(Team).Name()), nil
 	}))
-	f.Renderer.SetRenderer(reflect.TypeOf(t).Name(), r)
+	w.Formatter.SetFormatter(reflect.TypeOf(t).Name(), f)
 
-	_, _ = f.Write(u)
-	_, _ = f.Write("\n")
-	_, _ = f.Write(t)
+	_, _ = w.Write(u)
+	_, _ = w.Write("\n")
+	_, _ = w.Write(t)
 
 	// Since the Output cannot contain trailing spaces, it gets stripped from the table in this Example.
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
@@ -78,9 +78,9 @@ func ExampleTab_Write_struct() {
 
 func ExampleTab_Write_structSlice() {
 	b := &strings.Builder{}
-	f := NewTab(b)
+	w := NewTab(b)
 	typ := reflect.TypeOf([]Team{}).String()
-	f.Renderer.SetRenderer(typ, renderer.AsTab(renderer.RendererFunc(func(i interface{}) (string, error) {
+	w.Formatter.SetFormatter(typ, formatter.AsTab(formatter.Func(func(i interface{}) (string, error) {
 		b := strings.Builder{}
 		b.WriteString("name\tmembers\t\n")
 
@@ -91,31 +91,31 @@ func ExampleTab_Write_structSlice() {
 		return b.String(), nil
 	})))
 
-	_, _ = f.Write([]User{u, u})
-	_, _ = f.Write("\n")
-	_, _ = f.Write([]Team{t, t})
+	_, _ = w.Write([]User{u, *NewUser("Rudolf", "Lingens")})
+	_, _ = w.Write("\n")
+	_, _ = w.Write([]Team{t, t})
 
 	// Since the Example Output cannot contain trailing spaces, they get stripped.
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
 	fmt.Println(s)
 	// Output:
-	// username email
-	// John Doe john.doe@local
-	// John Doe john.doe@local
+	// username       email
+	// John Doe       john.doe@local
+	// Rudolf Lingens rudolf.lingens@local
 	// name    members
 	// SUPPORT 2
 	// SUPPORT 2
 }
 
 func ExampleText_Write_struct() {
-	f := NewText(os.Stdout)
-	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	w := NewText(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		return i.(Team).Name(), nil
 	})
 
-	_, _ = f.Write(t)
-	_, _ = f.Write("\n\n")
-	_, _ = f.Write(u)
+	_, _ = w.Write(t)
+	_, _ = w.Write("\n\n")
+	_, _ = w.Write(u)
 	// Output:
 	// SUPPORT
 	//
@@ -123,18 +123,48 @@ func ExampleText_Write_struct() {
 }
 
 func ExampleText_Write_structSlice() {
-	f := NewText(os.Stdout)
-	f.Renderer.SetRendererFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	w := NewText(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
 		return i.(Team).Name(), nil
 	})
 
-	_, _ = f.Write([]User{u, u})
-	_, _ = f.Write("\n\n")
-	_, _ = f.Write([]Team{t, t})
+	_, _ = w.Write([]User{u, u})
+	_, _ = w.Write("\n\n")
+	_, _ = w.Write([]Team{t, t})
 	// Output:
 	// John Doe <john.doe@local>
 	// John Doe <john.doe@local>
 	//
 	// SUPPORT
 	// SUPPORT
+}
+
+func ExampleYAML_Write_struct() {
+	w := NewYAML(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+		return i.(Team).Name(), nil
+	})
+
+	_, _ = w.Write(t)
+	_, _ = w.Write("\n\n")
+	_, _ = w.Write(u)
+	// Output:
+	// SUPPORT
+	//
+	// Username: John Doe
+	// E-Mail: john.doe@local
+}
+
+func ExampleYAML_Write_structSlice() {
+	w := NewYAML(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+		return i.(Team).Name(), nil
+	})
+
+	_, _ = w.Write([]User{u, u})
+	// Output:
+	// - Username: John Doe
+	//   E-Mail: john.doe@local
+	// - Username: John Doe
+	//   E-Mail: john.doe@local
 }

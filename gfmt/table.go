@@ -23,74 +23,75 @@ import (
 	"reflect"
 	"text/tabwriter"
 
-	"github.com/abc-inc/gutenfmt/internal/meta"
-	"github.com/abc-inc/gutenfmt/renderer"
+	"github.com/abc-inc/gutenfmt/formatter"
+	"github.com/abc-inc/gutenfmt/internal/render"
 )
 
+// Tab is a generic Writer that formats arbitrary values as ASCII table.
 type Tab struct {
-	w        *countingWriter
-	Renderer *renderer.CompRenderer
+	cw        *countingWriter
+	Formatter *formatter.CompFormatter
 }
 
+// NewTab creates a new table Writer.
 func NewTab(w io.Writer) *Tab {
-	return &Tab{wrapCountingWriter(w), renderer.NewComp()}
+	return &Tab{wrapCountingWriter(w), formatter.NewComp()}
 }
 
-func (f Tab) Write(i interface{}) (int, error) {
+// Write formats the given value as a table and writes it to the underlying Writer.
+func (w Tab) Write(i interface{}) (int, error) {
 	if i == nil {
 		return 0, nil
 	}
 
-	if s, err := f.Renderer.Render(i); err == nil {
-		return f.w.WriteString(s)
-	} else if !errors.Is(err, renderer.ErrUnsupported) {
+	if s, err := w.Formatter.Format(i); err == nil {
+		return w.cw.WriteString(s)
+	} else if !errors.Is(err, formatter.ErrUnsupported) {
 		return 0, err
 	}
 
 	typ := reflect.TypeOf(i)
 	if typ.Kind() == reflect.Ptr {
-		return f.Write(reflect.Indirect(reflect.ValueOf(i)).Interface())
-	} else if !meta.IsContainerType(typ.Kind()) {
-		return fmt.Fprint(f.w, i)
+		return w.Write(reflect.Indirect(reflect.ValueOf(i)).Interface())
+	} else if !isContainerType(typ.Kind()) {
+		return fmt.Fprint(w.cw, i)
 	}
 
-	f.w.cnt = 0
-	tw := tabwriter.NewWriter(f.w, 4, 4, 1, ' ', 0)
+	w.cw.cnt = 0
+	tw := tabwriter.NewWriter(w.cw, 4, 4, 1, ' ', 0)
 
 	switch typ.Kind() {
 	case reflect.Slice, reflect.Array:
-		_, err := f.writeSlice(tw, reflect.ValueOf(i))
-		return int(f.w.cnt), err
+		_, err := w.writeSlice(tw, reflect.ValueOf(i))
+		return int(w.cw.cnt), err
 	case reflect.Map:
-		_, err := f.writeMap(tw, i)
-		return int(f.w.cnt), err
+		_, err := w.writeMap(tw, i)
+		return int(w.cw.cnt), err
 	default:
-		_, err := f.writeStruct(tw, i)
-		return int(f.w.cnt), err
+		_, err := w.writeStruct(tw, i)
+		return int(w.cw.cnt), err
 	}
 }
 
-func (f Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
+// writeSlice formats a slice of any type to a string.
+func (w Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 	if v.Type().Elem().Kind() == reflect.Struct {
-		n, err := f.writeStructSlice(tw, v)
-		return n, err
-	} else if v.Type().Elem().Kind() == reflect.Map {
-		n, err := f.writeMapSlice(tw, v)
-		return n, err
+		return w.writeStructSlice(tw, v)
 	}
-
 	if v.Len() == 0 {
 		return 0, nil
 	}
-
-	n, err := f.w.WriteString(meta.ToString(v.Index(0).Interface()))
-	if err != nil {
-		return n, err
+	if reflect.TypeOf(reflect.Indirect(v.Index(0)).Interface()).Kind() == reflect.Map {
+		return w.writeMapSlice(tw, v)
 	}
 
-	cnt := n
+	cnt, err := w.cw.WriteString(render.ToString(v.Index(0).Interface()))
+	if err != nil {
+		return cnt, err
+	}
+
 	for idx := 1; idx < v.Len(); idx++ {
-		n, err = f.w.WriteString("\n" + meta.ToString(v.Index(idx).Interface()))
+		n, err := w.cw.WriteString("\n" + render.ToString(v.Index(idx).Interface()))
 		cnt += n
 		if err != nil {
 			return cnt, err
@@ -99,22 +100,26 @@ func (f Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 	return cnt, tw.Flush()
 }
 
-func (f Tab) writeMap(tw *tabwriter.Writer, i interface{}) (int, error) {
-	r := renderer.FromMap("\t", "\t\n")
-	return renderer.RenderTab(tw, r, i)
+// writeMap formats a map to a tabular string representation.
+func (w Tab) writeMap(tw *tabwriter.Writer, i interface{}) (int, error) {
+	f := formatter.FromMap("\t", "\t\n")
+	return formatter.FormatTab(tw, f, i)
 }
 
-func (f Tab) writeMapSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
-	r := renderer.FromMapSlice("\t", "\t\n", v.Type())
-	return renderer.RenderTab(tw, r, v.Interface())
+// writeMapSlice formats a map slice to a tabular string representation.
+func (w Tab) writeMapSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
+	f := formatter.FromMapSlice("\t", "\t\n")
+	return formatter.FormatTab(tw, f, v.Interface())
 }
 
-func (f Tab) writeStruct(tw *tabwriter.Writer, i interface{}) (int, error) {
-	r := renderer.FromStruct("\t", "\t\n", reflect.TypeOf(i))
-	return renderer.RenderTab(tw, r, i)
+// writeStruct formats a struct to a tabular string representation.
+func (w Tab) writeStruct(tw *tabwriter.Writer, i interface{}) (int, error) {
+	f := formatter.FromStruct("\t", "\t\n", reflect.TypeOf(i))
+	return formatter.FormatTab(tw, f, i)
 }
 
-func (f Tab) writeStructSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
-	r := renderer.FromStructSlice("\t", "\t\n", v.Type())
-	return renderer.RenderTab(tw, r, v.Interface())
+// writeStructSlice formats a struct slice to a tabular string representation.
+func (w Tab) writeStructSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
+	f := formatter.FromStructSlice("\t", "\t\n", v.Type())
+	return formatter.FormatTab(tw, f, v.Interface())
 }

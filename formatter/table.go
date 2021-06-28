@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-package renderer
+package formatter
 
 import (
 	"strings"
 	"text/tabwriter"
 )
 
-// AsTab returns a new Renderer that translates tabbed columns into properly aligned text.
-func AsTab(r Renderer) Renderer {
-	return RendererFunc(func(i interface{}) (string, error) {
+// AsTab returns a new Formatter that translates tabbed columns into properly aligned text.
+func AsTab(f Formatter) Formatter {
+	return Func(func(i interface{}) (string, error) {
 		b := &strings.Builder{}
 		tw := tabwriter.NewWriter(b, 4, 4, 1, ' ', 0)
-		_, err := RenderTab(tw, r, i)
+		_, err := FormatTab(tw, f, i)
 		return b.String(), err
 	})
 }
 
-// RenderTab renders the given input and translates tabbed columns into properly aligned text.
-func RenderTab(tw *tabwriter.Writer, r Renderer, i interface{}) (n int, err error) {
-	s, err := r.Render(i)
+// FormatTab formats the given input and translates tabbed columns into properly aligned text.
+func FormatTab(tw *tabwriter.Writer, f Formatter, i interface{}) (n int, err error) {
+	s, err := f.Format(i)
 	if err != nil {
 		return 0, err
 	}

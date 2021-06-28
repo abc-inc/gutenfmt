@@ -54,11 +54,11 @@ func TestText_Write(t *testing.T) {
 
 func TestText_WriteAllTypes(t *testing.T) {
 	b := &strings.Builder{}
-	f := NewText(b)
-	f.Renderer.SetRendererFunc(reflect.TypeOf(allTypes).Name(), func(i interface{}) (string, error) {
+	w := NewText(b)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(allTypes).Name(), func(i interface{}) (string, error) {
 		return i.(AllTypes).DefName, nil
 	})
-	_, err := f.Write(allTypes)
+	_, err := w.Write(allTypes)
 	NoError(t, err)
 	Equal(t, "DefName", b.String())
 }

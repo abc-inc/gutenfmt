@@ -14,26 +14,33 @@
  * limitations under the License.
  */
 
-package renderer_test
+package meta_test
 
 import (
-	"strings"
+	"reflect"
+	"testing"
+
+	. "github.com/abc-inc/gutenfmt/meta"
+	. "github.com/stretchr/testify/require"
 )
 
 type User struct {
-	Name     string `json:"username"`
-	Mail     string `json:"email"`
-	Password string `json:"-"`
+	Name     string `json:"username" yaml:"Username"`
+	Mail     string `json:"email" yaml:"E-Mail"`
+	Password string `json:"-" yaml:"-"`
+	KeyPair  `json:"keys"`
 }
 
-func NewUser(fName, lName string) *User {
-	return &User{
-		fName + " " + lName,
-		strings.ToLower(fName + "." + lName + "@local"),
-		"",
-	}
+type KeyPair struct {
+	Pub  []byte `json:"pub"`
+	priv []byte
 }
 
-func (u User) String() string {
-	return u.Name + " <" + u.Mail + ">"
+func TestTagResolver_lookup(t *testing.T) {
+	fs := TagResolver{TagName: "yaml"}.Lookup(reflect.TypeOf(User{}))
+	Equal(t, 2, len(fs))
+	Equal(t, "Username", fs[0].Name)
+	Equal(t, "Name", fs[0].Field)
+	Equal(t, "E-Mail", fs[1].Name)
+	Equal(t, "Mail", fs[1].Field)
 }

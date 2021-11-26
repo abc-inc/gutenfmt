@@ -30,7 +30,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "gutenfmt",
-	Short: "Formats the input as JSON, YAML, ASCII table or name and value pairs.",
+	Short: "Formats the input as CSV, JSON, YAML, ASCII table or name and value pairs.",
 	Long: `The gutenfmt utility formats its input to various output formats.
 
 Supported input formats:
@@ -39,6 +39,7 @@ Supported input formats:
 - Tab-separated name and value pairs
 
 The following output formats are supported:
+- csv: Comma-separated values.
 - json: JSON string. This setting is the default for non-terminals.
 - jsonc: Colorized JSON. This setting is the default for interactive terminals.
 - table: ASCII table.
@@ -59,6 +60,9 @@ The following output formats are supported:
 		switch strings.ToLower(ff) {
 		case "":
 			w = gfmt.NewAutoJSON(os.Stdout)
+		case "csv":
+			w = gfmt.NewText(os.Stdout)
+			w.(*gfmt.Text).Sep = ","
 		case "json":
 			w = gfmt.NewJSON(os.Stdout)
 		case "jsonc":
@@ -92,7 +96,7 @@ func main() {
 	}
 
 	rootCmd.Flags().StringP("output", "o", "",
-		"The formatting style for command output (json, jsonc, table, text, tsv, yaml).")
+		"The formatting style for command output (csv, json, jsonc, table, text, tsv, yaml, yamlc).")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

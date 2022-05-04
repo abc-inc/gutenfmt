@@ -102,6 +102,37 @@ func TestTab_WriteStruct(t *testing.T) {
 	Equal(t, "username John Doe \nemail    john.doe@local", b.String())
 }
 
+func TestTab_WriteStructSlice(t *testing.T) {
+	type data struct {
+		A interface{}
+		B string
+		C interface{}
+	}
+
+	b := &strings.Builder{}
+	_, err := NewTab(b).Write([]data{{A: 'a', B: "b", C: true}, {A: "d", B: "e", C: "f"}})
+	NoError(t, err)
+	Equal(t, "A   B   C    \n97  b   true \nd   e   f", b.String())
+}
+
+func TestTab_WriteStructPtrSlice(t *testing.T) {
+	type data struct {
+		A, B string
+	}
+
+	b := &strings.Builder{}
+	_, err := NewTab(b).Write([]*data{{A: "1", B: "2"}, {A: "3", B: "4"}})
+	NoError(t, err)
+	Equal(t, "A   B   \n1   2   \n3   4", b.String())
+}
+
+func TestTab_WriteMap(t *testing.T) {
+	b := &strings.Builder{}
+	_, err := NewTab(b).Write(map[string]interface{}{"a": 'a', "b": "b", "c": true})
+	NoError(t, err)
+	Regexp(t, "([a-c]   (97|b|true)[ ]{1,4}\n){3}", b.String())
+}
+
 func TestTab_WriteMapSliceCustom(t *testing.T) {
 	mss := []map[string]string{{"a": "w", "b": "x"}, {"a": "y", "b": "z"}}
 	msi := []map[string]int{{"c": 1, "d": 2}, {"c": 3, "d": 4}}

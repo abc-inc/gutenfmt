@@ -57,7 +57,7 @@ func (w Text) Write(i interface{}) (int, error) {
 		return fmt.Fprint(w.w, i)
 	}
 
-	switch typ.Kind() {
+	switch typ.Kind() { //nolint:exhaustive
 	case reflect.Slice, reflect.Array:
 		return w.writeSlice(reflect.ValueOf(i))
 	case reflect.Map:
@@ -69,8 +69,16 @@ func (w Text) Write(i interface{}) (int, error) {
 
 // writeSlice writes the text representation of the given slice to the underlying Writer.
 func (w Text) writeSlice(v reflect.Value) (int, error) {
+	if v.Type().Elem().Kind() == reflect.Struct ||
+		(v.Type().Elem().Kind() == reflect.Ptr && v.Type().Elem().Elem().Kind() == reflect.Struct) {
+
+		return w.writeStructSlice(v)
+	}
 	if v.Len() == 0 {
 		return 0, nil
+	}
+	if reflect.TypeOf(reflect.Indirect(v.Index(0)).Interface()).Kind() == reflect.Map {
+		return w.writeMapSlice(v.Interface())
 	}
 
 	n, err := w.Write(v.Index(0).Interface())
@@ -122,6 +130,24 @@ func (w Text) writeMap(iter *reflect.MapIter) (int, error) {
 	}
 
 	return cnt, nil
+}
+
+func (w Text) writeMapSlice(i interface{}) (int, error) {
+	f := formatter.FromMapSlice(w.Sep, w.Delim)
+	s, err := f.Format(i)
+	if err != nil {
+		return 0, err
+	}
+	return io.WriteString(w.w, s)
+}
+
+func (w Text) writeStructSlice(v reflect.Value) (int, error) {
+	f := formatter.FromStructSlice(w.Sep, w.Delim, v.Type())
+	s, err := f.Format(v.Interface())
+	if err != nil {
+		return 0, err
+	}
+	return io.WriteString(w.w, s)
 }
 
 // writeKeyVal writes the text representation of a map entry to the underlying Writer.

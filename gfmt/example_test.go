@@ -122,16 +122,21 @@ func ExampleText_Write_struct() {
 
 func ExampleText_Write_structSlice() {
 	w := NewText(os.Stdout)
-	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
-		return i.(Team).Name(), nil
+	w.Formatter.SetFormatterFunc(reflect.TypeOf([]Team{}).String(), func(i interface{}) (string, error) {
+		b := strings.Builder{}
+		for _, t := range i.([]Team) {
+			b.WriteString(t.Name() + "\n")
+		}
+		return b.String(), nil
 	})
 
 	_, _ = w.Write([]User{u, u})
 	_, _ = w.Write("\n\n")
 	_, _ = w.Write([]Team{t, t})
 	// Output:
-	// John Doe <john.doe@local>
-	// John Doe <john.doe@local>
+	// username:email
+	// John Doe:john.doe@local
+	// John Doe:john.doe@local
 	//
 	// SUPPORT
 	// SUPPORT

@@ -58,7 +58,7 @@ func (w Tab) Write(i interface{}) (int, error) {
 	w.cw.cnt = 0
 	tw := tabwriter.NewWriter(w.cw, 4, 4, 1, ' ', 0)
 
-	switch typ.Kind() {
+	switch typ.Kind() { //nolint:exhaustive
 	case reflect.Slice, reflect.Array:
 		_, err := w.writeSlice(tw, reflect.ValueOf(i))
 		return int(w.cw.cnt), err
@@ -73,7 +73,9 @@ func (w Tab) Write(i interface{}) (int, error) {
 
 // writeSlice formats a slice of any type to a string.
 func (w Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
-	if v.Type().Elem().Kind() == reflect.Struct {
+	if v.Type().Elem().Kind() == reflect.Struct ||
+		(v.Type().Elem().Kind() == reflect.Ptr && v.Type().Elem().Elem().Kind() == reflect.Struct) {
+
 		return w.writeStructSlice(tw, v)
 	}
 	if v.Len() == 0 {

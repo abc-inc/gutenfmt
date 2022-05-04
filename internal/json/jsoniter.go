@@ -1,5 +1,4 @@
 //go:build jsoniter
-// +build jsoniter
 
 // Copyright 2021 The gutenfmt authors
 //

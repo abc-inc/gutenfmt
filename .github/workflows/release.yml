@@ -1,0 +1,10 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  goreleaser:
+    name: Release
+    uses: abc-inc/gh-actions-go-workflows/.github/workflows/release.yml@master

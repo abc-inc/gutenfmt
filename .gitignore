@@ -1,16 +1,10 @@
-### JetBrains
-/.idea/
-
-### Visual Studio Code
+### VisualStudioCode
 /.vscode/
 
-### Go
-*.out
-*.test
+### JetBrains
+/.idea/
 
 ### misc
 /bin/
 /dist/
 /tmp/
-*.log
-*.tmp

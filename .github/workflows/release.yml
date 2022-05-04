@@ -5,26 +5,28 @@ on:
     types: [created]
 
 jobs:
-  goreleaser:
-    name: Release
+  Release:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Cache Go modules
-        uses: actions/cache@v2
+        uses: actions/checkout@v3
         with:
-          path: ~/go/pkg/mod
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.18.0'
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.OS }}-go-
-            ${{ runner.OS }}-
-      - name: Get dependencies
-        run: go get -d -t -v ./...
+      - name: Test
+        run: go test ./...
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:

@@ -44,7 +44,7 @@ type TagResolver struct {
 // Lookup processes tags with a certain key in the fields' tag and uses the name, if defined.
 // As a special case, if the field tag is "-", the field is omitted.
 // Options like "omitempty" are ignored.
-func (r TagResolver) Lookup(typ reflect.Type) (fs []field) {
+func (r TagResolver) Lookup(typ reflect.Type) (fs []Field) {
 	if typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
@@ -52,7 +52,7 @@ func (r TagResolver) Lookup(typ reflect.Type) (fs []field) {
 	for idx := 0; idx < typ.NumField(); idx++ {
 		sf := typ.Field(idx)
 		if n := r.fieldName(sf); n != "" {
-			fs = append(fs, field{sf.Name, n})
+			fs = append(fs, Field{sf.Name, n})
 		}
 	}
 	return

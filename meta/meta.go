@@ -20,14 +20,14 @@ import (
 	"reflect"
 )
 
-// field represents a single field found in a struct.
-type field struct {
+// Field represents a single field found in a struct.
+type Field struct {
 	Field string
 	Name  string
 }
 
 // Resolver returns a list of fields that should be recognized for the given type.
-type Resolver func(typ reflect.Type) []field
+type Resolver func(typ reflect.Type) []Field
 
 // Resolve holds the default Resolver.
 var Resolve Resolver = TagResolver{"json"}.Lookup

@@ -69,3 +69,41 @@ func TestText_WriteStruct(t *testing.T) {
 	NoError(t, err)
 	Equal(t, "John Doe <john.doe@local>", b.String())
 }
+
+func TestText_WriteStructSlice(t *testing.T) {
+	type data struct {
+		A interface{}
+		B string
+		C interface{}
+	}
+
+	b := &strings.Builder{}
+	_, err := NewText(b).Write([]data{{A: 'a', B: "b", C: true}, {A: "d", B: "e", C: "f"}})
+	NoError(t, err)
+	Equal(t, "A:B:C\n97:b:true\nd:e:f", b.String())
+}
+
+func TestText_WriteStructPtrSlice(t *testing.T) {
+	type data struct {
+		A, B string
+	}
+
+	b := &strings.Builder{}
+	_, err := NewText(b).Write([]*data{{A: "1", B: "2"}, {A: "3", B: "4"}})
+	NoError(t, err)
+	Equal(t, "A:B\n1:2\n3:4", b.String())
+}
+
+func TestText_WriteMap(t *testing.T) {
+	b := &strings.Builder{}
+	_, err := NewText(b).Write(map[string]interface{}{"a": 'a', "b": "b", "c": true})
+	NoError(t, err)
+	Regexp(t, "([a-c]:(97|b|true)\n){2}([a-c]:(97|b|true))", b.String())
+}
+
+func TestText_WriteMapSlice(t *testing.T) {
+	b := &strings.Builder{}
+	_, err := NewText(b).Write([]map[string]interface{}{{"a": 'a', "b": true}, {"a": "c", "b": "d"}})
+	NoError(t, err)
+	Regexp(t, "^(a:b\n97:true\nc:d)|(b:a\ntrue:97\nd:c)", b.String())
+}

@@ -38,7 +38,7 @@ func ToString(i interface{}) string {
 		return ""
 	}
 	typ := reflect.TypeOf(i)
-	switch typ.Kind() {
+	switch typ.Kind() { //nolint:exhaustive
 	case reflect.Array, reflect.Slice:
 		s := fmt.Sprint(i)
 		return s[1 : len(s)-1]

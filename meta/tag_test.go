@@ -33,7 +33,7 @@ type User struct {
 
 type KeyPair struct {
 	Pub  []byte `json:"pub"`
-	priv []byte
+	priv []byte //nolint:unused
 }
 
 func TestTagResolver_lookup(t *testing.T) {

@@ -59,7 +59,7 @@ func (w Text) Write(i interface{}) (int, error) {
 		return fmt.Fprint(w.w, i)
 	}
 
-	switch typ.Kind() {
+	switch typ.Kind() { //nolint:exhaustive
 	case reflect.Slice, reflect.Array:
 		return w.writeSlice(reflect.ValueOf(i))
 	case reflect.Map:
@@ -73,6 +73,7 @@ func (w Text) Write(i interface{}) (int, error) {
 func (w Text) writeSlice(v reflect.Value) (int, error) {
 	if v.Type().Elem().Kind() == reflect.Struct ||
 		(v.Type().Elem().Kind() == reflect.Ptr && v.Type().Elem().Elem().Kind() == reflect.Struct) {
+
 		return w.writeStructSlice(v)
 	}
 	if v.Len() == 0 {

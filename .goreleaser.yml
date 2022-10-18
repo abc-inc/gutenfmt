@@ -6,23 +6,15 @@ before:
     - go mod tidy
 
 builds:
-  - id: "default"
-    main: ./cmd/gutenfmt
-    flags:
-      - -trimpath
-    ldflags:
-      - -s -w
-      - -X internal/build.Version={{.Version}}
-    goos:
-      - darwin
-      - linux
-      - windows
-    goarch:
-      - amd64
-    mod_timestamp: "{{ .CommitTimestamp }}"
+  - id: default
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - windows_amd64
 
 archives:
-  - builds:
-      - default
+  - id: default
     format: binary
-    name_template: "{{ .Binary }}-{{ .Version }}-{{ .Os }}_{{ .Arch }}"
+    replacements:
+      darwin: macOS

@@ -22,7 +22,6 @@ import (
 )
 
 // TagResolver reads the tags of struct fields to extract metadata.
-//
 // TagName can be any of, but not limited to
 //
 // - json: used by the encoding/json package, detailed at json.Marshal()

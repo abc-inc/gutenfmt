@@ -62,6 +62,8 @@ func (w Text) Write(i interface{}) (int, error) {
 		return w.writeSlice(reflect.ValueOf(i))
 	case reflect.Map:
 		return w.writeMap(reflect.ValueOf(i).MapRange())
+	case reflect.Struct:
+		return w.writeStruct(reflect.ValueOf(i))
 	default:
 		return 0, formatter.ErrUnsupported
 	}
@@ -135,6 +137,15 @@ func (w Text) writeMap(iter *reflect.MapIter) (int, error) {
 func (w Text) writeMapSlice(i interface{}) (int, error) {
 	f := formatter.FromMapSlice(w.Sep, w.Delim)
 	s, err := f.Format(i)
+	if err != nil {
+		return 0, err
+	}
+	return io.WriteString(w.w, s)
+}
+
+func (w Text) writeStruct(v reflect.Value) (int, error) {
+	f := formatter.FromStruct(w.Sep, w.Delim, v.Type())
+	s, err := f.Format(v.Interface())
 	if err != nil {
 		return 0, err
 	}

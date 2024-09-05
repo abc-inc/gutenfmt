@@ -54,6 +54,15 @@ func (t Team) Members() []User {
 	return t.members
 }
 
+type Org struct {
+	Name  string
+	Teams []Team
+}
+
+func NewOrg(name string) *Org {
+	return &Org{name, []Team{}}
+}
+
 type JSONTypes struct {
 	DefName        string `json:"" yaml:""`
 	Skip           string `json:"-" yaml:"-"`

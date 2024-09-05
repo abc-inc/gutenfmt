@@ -35,7 +35,8 @@ func TestText_Write(t *testing.T) {
 		{"string", "∮∯∰", "∮∯∰"},
 		{"empty_array", [0]string{}, "^$"},
 		{"int_slice", []int{1, 2, 3}, "1\n2\n3"},
-		{"struct", NewUser("John", "Doe"), "John Doe <john.doe@local>"},
+		{"struct_stringer", NewUser("John", "Doe"), "John Doe <john.doe@local>"},
+		{"struct", NewOrg("Enterprise"), "Name:Enterprise\nTeams:"},
 		{"mixed_array", []interface{}{[0]string{}, true, -42, "a", NewUser("f", "l")}, "^\ntrue\n-42\na\nf l <f.l@local>$"},
 		{"map", map[string]interface{}{"a a": 1, ":": ":"}, "^(:::\na a:1)|(a a:1\n:::)$"},
 	}

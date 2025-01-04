@@ -29,21 +29,21 @@ type Formatter interface {
 	// Format returns a suitable string representation of i.
 	//
 	// Format must not modify the given parameter, even temporarily.
-	Format(i interface{}) (string, error)
+	Format(i any) (string, error)
 }
 
 // Func is an adapter to allow the use of ordinary functions as Formatters.
 // If f is a function with the appropriate signature,
 // Func(f) is a Formatter that calls f.
-type Func func(i interface{}) (string, error)
+type Func func(i any) (string, error)
 
 // Format returns a string by applying f to i.
-func (f Func) Format(i interface{}) (string, error) {
+func (f Func) Format(i any) (string, error) {
 	return f(i)
 }
 
 // Noop always returns an empty string and no error.
-func Noop(_ interface{}) (s string, err error) {
+func Noop(_ any) (s string, err error) {
 	return
 }
 
@@ -62,7 +62,7 @@ func NewComp() *CompFormatter {
 
 // Format converts the given parameter to its string representation.
 // If none of the registered Formatters can handle the given value, an error is returned.
-func (cf CompFormatter) Format(i interface{}) (string, error) {
+func (cf CompFormatter) Format(i any) (string, error) {
 	if f, ok := cf.byType[typeName(reflect.TypeOf(i))]; ok {
 		return f.Format(i)
 	}
@@ -82,8 +82,7 @@ func (cf *CompFormatter) SetFormatterFunc(n string, f Func) {
 }
 
 // typeName returns the type's name.
-// If the type cannot be determined e.g., []interface{}, a string representation
-// is returned instead.
+// If the type cannot be determined e.g., []any, a string representation is returned instead.
 //
 // Note that a string representation is not necessarily unique among types.
 func typeName(typ reflect.Type) string {

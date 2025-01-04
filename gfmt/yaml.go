@@ -46,7 +46,7 @@ func NewPrettyYAML(w io.Writer) *YAML {
 }
 
 // Write writes the YAML representation of the given value to the underlying Writer.
-func (w YAML) Write(i interface{}) (int, error) {
+func (w YAML) Write(i any) (int, error) {
 	if i == nil {
 		return 0, nil
 	}

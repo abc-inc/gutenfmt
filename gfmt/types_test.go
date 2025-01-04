@@ -28,7 +28,7 @@ import (
 func Test_Write_Types(t *testing.T) {
 	type data struct {
 		kind reflect.Kind
-		in   interface{}
+		in   any
 		out  string
 	}
 	type unit struct {
@@ -107,23 +107,23 @@ func Test_Write_Types(t *testing.T) {
 
 				// array
 				u.b.Reset()
-				_, err = u.w.Write([2]interface{}{tt.in, tt.in})
-				NoError(t, err)
-				Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
+				_, err = u.w.Write([2]any{tt.in, tt.in})
+				require.NoError(t, err)
+				require.Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
 
 				// slice
 				u.b.Reset()
-				_, err = u.w.Write([]interface{}{tt.in, tt.in})
-				NoError(t, err)
-				Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
+				_, err = u.w.Write([]any{tt.in, tt.in})
+				require.NoError(t, err)
+				require.Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
 
 				// map
 				if _, ok := u.w.(*JSON); !ok {
 					// JSON does not support arbitrary maps
 					u.b.Reset()
-					_, err = u.w.Write(map[interface{}]interface{}{tt.in: tt.in})
-					NoError(t, err)
-					Equal(t, postProc(fmt.Sprintf("%s:%s", want, want)), u.b.String())
+					_, err = u.w.Write(map[any]any{tt.in: tt.in})
+					require.NoError(t, err)
+					require.Equal(t, postProc(fmt.Sprintf("%s:%s", want, want)), u.b.String())
 				}
 			})
 		}

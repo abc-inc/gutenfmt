@@ -29,7 +29,7 @@ import (
 func TestTab_Write(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
+		arg  any
 		want string
 	}{
 		{"nil", nil, ""},
@@ -39,9 +39,9 @@ func TestTab_Write(t *testing.T) {
 		{"empty_array", [0]string{}, "^$"},
 		{"int_slice", []int{1, 2, 3}, "1\n2\n3"},
 		{"struct", NewUser("John", "Doe"), "username John Doe \nemail    john.doe@local"},
-		{"mixed_array", []interface{}{[0]string{}, true, -42, "a", NewUser("f", "l")}, "^\ntrue\n-42\na\nf l <f.l@local>$"},
-		{"map", map[string]interface{}{"a a": 1, ":": ":"}, "(a a 1   \n:   :   )|(:   :   \na a 1   )"},
-		{"map_slice", []map[string]interface{}{{"a": 1, "b": 2}, {"b": 3, "a": 4}},
+		{"mixed_array", []any{[0]string{}, true, -42, "a", NewUser("f", "l")}, "^\ntrue\n-42\na\nf l <f.l@local>$"},
+		{"map", map[string]any{"a a": 1, ":": ":"}, "(a a 1   \n:   :   )|(:   :   \na a 1   )"},
+		{"map_slice", []map[string]any{{"a": 1, "b": 2}, {"b": 3, "a": 4}},
 			"(a   b   \n1   2   \n4   3)|(b   a   \n2   1   \n3   4)"},
 	}
 
@@ -104,9 +104,9 @@ func TestTab_WriteStruct(t *testing.T) {
 
 func TestTab_WriteStructSlice(t *testing.T) {
 	type data struct {
-		A interface{}
+		A any
 		B string
-		C interface{}
+		C any
 	}
 
 	b := &strings.Builder{}
@@ -128,9 +128,9 @@ func TestTab_WriteStructPtrSlice(t *testing.T) {
 
 func TestTab_WriteMap(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewTab(b).Write(map[string]interface{}{"a": 'a', "b": "b", "c": true})
-	NoError(t, err)
-	Regexp(t, "([a-c]   (97|b|true)[ ]{1,4}\n){3}", b.String())
+	_, err := gfmt.NewTab(b).Write(map[string]any{"a": 'a', "b": "b", "c": true})
+	require.NoError(t, err)
+	require.Regexp(t, "([a-c]   (97|b|true)[ ]{1,4}\n){3}", b.String())
 }
 
 func TestTab_WriteMapSliceCustom(t *testing.T) {

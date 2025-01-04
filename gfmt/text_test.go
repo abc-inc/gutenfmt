@@ -26,7 +26,7 @@ import (
 func TestText_Write(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
+		arg  any
 		want string
 	}{
 		{"nil", nil, ""},
@@ -37,8 +37,8 @@ func TestText_Write(t *testing.T) {
 		{"int_slice", []int{1, 2, 3}, "1\n2\n3"},
 		{"struct_stringer", NewUser("John", "Doe"), "John Doe <john.doe@local>"},
 		{"struct", NewOrg("Enterprise"), "Name:Enterprise\nTeams:"},
-		{"mixed_array", []interface{}{[0]string{}, true, -42, "a", NewUser("f", "l")}, "^\ntrue\n-42\na\nf l <f.l@local>$"},
-		{"map", map[string]interface{}{"a a": 1, ":": ":"}, "^(:::\na a:1)|(a a:1\n:::)$"},
+		{"mixed_array", []any{[0]string{}, true, -42, "a", NewUser("f", "l")}, "^\ntrue\n-42\na\nf l <f.l@local>$"},
+		{"map", map[string]any{"a a": 1, ":": ":"}, "^(:::\na a:1)|(a a:1\n:::)$"},
 	}
 
 	for _, tt := range tests {
@@ -53,8 +53,8 @@ func TestText_Write(t *testing.T) {
 
 func TestText_WriteAllTypes(t *testing.T) {
 	b := &strings.Builder{}
-	w := NewText(b)
-	w.Formatter.SetFormatterFunc(reflect.TypeOf(allTypes).Name(), func(i interface{}) (string, error) {
+	w := gfmt.NewText(b)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(allTypes).Name(), func(i any) (string, error) {
 		return i.(AllTypes).DefName, nil
 	})
 	_, err := w.Write(allTypes)
@@ -71,9 +71,9 @@ func TestText_WriteStruct(t *testing.T) {
 
 func TestText_WriteStructSlice(t *testing.T) {
 	type data struct {
-		A interface{}
+		A any
 		B string
-		C interface{}
+		C any
 	}
 
 	b := &strings.Builder{}

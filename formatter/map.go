@@ -24,7 +24,7 @@ import (
 
 // FromMap creates a Formatter that outputs all map entries in unspecified order.
 func FromMap(sep, delim string) Formatter {
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		return FromMapKeys(sep, delim, reflect.ValueOf(i).MapKeys()...).Format(i)
 	})
 }
@@ -33,7 +33,7 @@ func FromMap(sep, delim string) Formatter {
 // Unlike FromMap, map entries are formatted in the specified order.
 // If a key is given multiple times, it will be rendered multiple times.
 func FromMapKeys(sep, delim string, ks ...reflect.Value) Formatter {
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		m := reflect.ValueOf(i)
 		b := &strings.Builder{}
 		for _, mk := range ks {
@@ -62,7 +62,7 @@ func FromMapSlice(sep, delim string) Formatter {
 		return false
 	}
 
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		v := reflect.ValueOf(i)
 		if v.Len() == 0 {
 			return "", nil
@@ -107,7 +107,7 @@ func FromMapSliceKeys(sep, delim string, ks ...reflect.Value) Formatter {
 		return NoopFormatter()
 	}
 
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		v := reflect.ValueOf(i)
 		b := &strings.Builder{}
 

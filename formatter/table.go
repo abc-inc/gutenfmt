@@ -21,7 +21,7 @@ import (
 
 // AsTab returns a new Formatter that translates tabbed columns into properly aligned text.
 func AsTab(f Formatter) Formatter {
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		b := &strings.Builder{}
 		tw := tabwriter.NewWriter(b, 4, 4, 1, ' ', 0)
 		_, err := FormatTab(tw, f, i)
@@ -30,7 +30,7 @@ func AsTab(f Formatter) Formatter {
 }
 
 // FormatTab formats the given input and translates tabbed columns into properly aligned text.
-func FormatTab(tw *tabwriter.Writer, f Formatter, i interface{}) (n int, err error) {
+func FormatTab(tw *tabwriter.Writer, f Formatter, i any) (n int, err error) {
 	s, err := f.Format(i)
 	if err != nil {
 		return 0, err

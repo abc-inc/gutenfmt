@@ -37,7 +37,7 @@ func NewText(w io.Writer) *Text {
 }
 
 // Write writes the text representation of the given value to the underlying Writer.
-func (w Text) Write(i interface{}) (int, error) {
+func (w Text) Write(i any) (int, error) {
 	if i == nil {
 		return 0, nil
 	}
@@ -134,7 +134,7 @@ func (w Text) writeMap(iter *reflect.MapIter) (int, error) {
 	return cnt, nil
 }
 
-func (w Text) writeMapSlice(i interface{}) (int, error) {
+func (w Text) writeMapSlice(i any) (int, error) {
 	f := formatter.FromMapSlice(w.Sep, w.Delim)
 	s, err := f.Format(i)
 	if err != nil {
@@ -162,7 +162,7 @@ func (w Text) writeStructSlice(v reflect.Value) (int, error) {
 }
 
 // writeKeyVal writes the text representation of a map entry to the underlying Writer.
-func (w Text) writeKeyVal(k, v interface{}) (int, error) {
+func (w Text) writeKeyVal(k, v any) (int, error) {
 	cnt := 0
 
 	n, err := w.Write(k)

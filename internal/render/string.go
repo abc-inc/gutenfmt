@@ -31,7 +31,7 @@ import (
 // - pointers: dereferenced before determining their string representation
 //
 // - others: formatted using the default formats like fmt.Sprint
-func ToString(i interface{}) string {
+func ToString(i any) string {
 	if i == nil {
 		return ""
 	}

@@ -29,7 +29,7 @@ func FromStruct(sep, delim string, typ reflect.Type) Formatter {
 		return NoopFormatter()
 	}
 
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		v := reflect.Indirect(reflect.ValueOf(i))
 		b := &strings.Builder{}
 		for _, f := range fs {
@@ -50,7 +50,7 @@ func FromStructSlice(sep, delim string, typ reflect.Type) Formatter {
 		return NoopFormatter()
 	}
 
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		b := &strings.Builder{}
 		for _, f := range fs {
 			b.WriteString(sep)

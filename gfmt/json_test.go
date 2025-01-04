@@ -30,7 +30,7 @@ func TestNewAutoJSON(t *testing.T) {
 func TestJSON_Write(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
+		arg  any
 		want string
 	}{
 		{"nil", nil, ""},
@@ -40,8 +40,8 @@ func TestJSON_Write(t *testing.T) {
 		{"empty_array", [0]string{}, `^\[\]$`},
 		{"int_slice", []int{1, 2, 3}, `\[1,2,3\]`},
 		{"struct", NewUser("John", "Doe"), `"email":"john.doe@local"`},
-		{"mixed_array", []interface{}{[0]string{}, true, -42, "a", NewUser("f", "l")}, `,true,-42,"a",{"username":"f l",`},
-		{"map", map[string]interface{}{"a a": 1, ":": ":"}, `{":":":"."a a":1}|{"a a":1,":":":"}`},
+		{"mixed_array", []any{[0]string{}, true, -42, "a", NewUser("f", "l")}, `,true,-42,"a",{"username":"f l",`},
+		{"map", map[string]any{"a a": 1, ":": ":"}, `{":":":"."a a":1}|{"a a":1,":":":"}`},
 	}
 
 	for _, tt := range tests {

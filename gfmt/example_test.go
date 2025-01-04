@@ -30,8 +30,8 @@ var u = *NewUser("John", "Doe")
 var t = *NewTeam("Support", u, u)
 
 func ExampleJSON_Write_struct() {
-	w := NewJSON(os.Stdout)
-	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	w := gfmt.NewJSON(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i any) (string, error) {
 		tm := i.(Team)
 		return `{"team":"` + tm.Name() + `","members":` + strconv.Itoa(len(tm.Members())) + `}`, nil
 	})
@@ -55,8 +55,8 @@ func ExampleJSON_Write_structSlice() {
 
 func ExampleTab_Write_struct() {
 	b := &strings.Builder{}
-	w := NewTab(b)
-	f := formatter.AsTab(formatter.Func(func(i interface{}) (string, error) {
+	w := gfmt.NewTab(b)
+	f := formatter.AsTab(formatter.Func(func(i any) (string, error) {
 		return fmt.Sprintf("name\t%s\t", i.(Team).Name()), nil
 	}))
 	w.Formatter.SetFormatter(reflect.TypeOf(t).Name(), f)
@@ -78,7 +78,7 @@ func ExampleTab_Write_structSlice() {
 	b := &strings.Builder{}
 	w := NewTab(b)
 	typ := reflect.TypeOf([]Team{}).String()
-	w.Formatter.SetFormatter(typ, formatter.AsTab(formatter.Func(func(i interface{}) (string, error) {
+	w.Formatter.SetFormatter(typ, formatter.AsTab(formatter.Func(func(i any) (string, error) {
 		b := strings.Builder{}
 		b.WriteString("name\tmembers\t\n")
 
@@ -106,8 +106,8 @@ func ExampleTab_Write_structSlice() {
 }
 
 func ExampleText_Write_struct() {
-	w := NewText(os.Stdout)
-	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	w := gfmt.NewText(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i any) (string, error) {
 		return i.(Team).Name(), nil
 	})
 
@@ -121,8 +121,8 @@ func ExampleText_Write_struct() {
 }
 
 func ExampleText_Write_structSlice() {
-	w := NewText(os.Stdout)
-	w.Formatter.SetFormatterFunc(reflect.TypeOf([]Team{}).String(), func(i interface{}) (string, error) {
+	w := gfmt.NewText(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf([]Team{}).String(), func(i any) (string, error) {
 		b := strings.Builder{}
 		for _, t := range i.([]Team) {
 			b.WriteString(t.Name() + "\n")
@@ -143,8 +143,8 @@ func ExampleText_Write_structSlice() {
 }
 
 func ExampleYAML_Write_struct() {
-	w := NewYAML(os.Stdout)
-	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	w := gfmt.NewYAML(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i any) (string, error) {
 		return i.(Team).Name(), nil
 	})
 
@@ -159,8 +159,8 @@ func ExampleYAML_Write_struct() {
 }
 
 func ExampleYAML_Write_structSlice() {
-	w := NewYAML(os.Stdout)
-	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i interface{}) (string, error) {
+	w := gfmt.NewYAML(os.Stdout)
+	w.Formatter.SetFormatterFunc(reflect.TypeOf(t).Name(), func(i any) (string, error) {
 		return i.(Team).Name(), nil
 	})
 

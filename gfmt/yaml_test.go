@@ -25,7 +25,7 @@ import (
 func TestYAML_Write(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
+		arg  any
 		want string
 	}{
 		{"nil", nil, ""},
@@ -35,9 +35,9 @@ func TestYAML_Write(t *testing.T) {
 		{"empty_array", [0]string{}, `^\[\]$`},
 		{"int_slice", []int{1, 2, 3}, `- 1\n- 2\n- 3`},
 		{"struct", NewUser("John", "Doe"), `^Username: John Doe\nE-Mail: john.doe@local$`},
-		{"mixed_array", []interface{}{[0]string{}, true, -42, "a", NewUser("f", "l")},
+		{"mixed_array", []any{[0]string{}, true, -42, "a", NewUser("f", "l")},
 			`- true\n- -42\n- a\n- Username: f l\n  E-Mail: f.l@local`},
-		{"map", map[string]interface{}{"a a": 1, ":": ":"}, `':': ':'\na a: 1`},
+		{"map", map[string]any{"a a": 1, ":": ":"}, `':': ':'\na a: 1`},
 	}
 
 	for _, tt := range tests {

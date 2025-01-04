@@ -58,7 +58,7 @@ func NewPrettyJSON(w io.Writer) *JSON {
 }
 
 // Write writes the JSON representation of the given value to the underlying Writer.
-func (w JSON) Write(i interface{}) (int, error) {
+func (w JSON) Write(i any) (int, error) {
 	if i == nil {
 		return 0, nil
 	}

@@ -29,7 +29,7 @@ func TestCompFormatter_Format(t *testing.T) {
 	_, err := f.Format("x")
 	Error(t, err)
 
-	f.SetFormatterFunc("string", func(i interface{}) (string, error) {
+	f.SetFormatterFunc("string", func(i any) (string, error) {
 		return strings.ToUpper(i.(string)), nil
 	})
 	s, err := f.Format("x")
@@ -65,5 +65,5 @@ func TestTypeName(t *testing.T) {
 	Equal(t, "struct { string }", typeName(reflect.TypeOf(s1)))
 	Equal(t, "struct { s string }", typeName(reflect.TypeOf(s2)))
 
-	Equal(t, "map[interface {}]bool", typeName(reflect.TypeOf(map[interface{}]bool{})))
+	require.Equal(t, "map[interface {}]bool", typeName(reflect.TypeOf(map[any]bool{})))
 }

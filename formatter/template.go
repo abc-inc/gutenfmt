@@ -22,7 +22,7 @@ import (
 // FromTemplate returns a new Formatter that applies a parsed template to the input.
 // If an error occurs executing the template, execution stops and no output is returned.
 func FromTemplate(tmpl *template.Template) Formatter {
-	return Func(func(i interface{}) (string, error) {
+	return Func(func(i any) (string, error) {
 		b := &strings.Builder{}
 		if err := tmpl.Execute(b, i); err != nil {
 			return "", err

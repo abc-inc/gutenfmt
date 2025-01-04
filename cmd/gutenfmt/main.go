@@ -106,15 +106,15 @@ func main() {
 
 // parse attempts to detect the input format e.g., JSON and returns the value,
 // which could be a key-value pairs (map) or a slice thereof.
-func parse() interface{} {
-	m := map[string]interface{}{}
+func parse() any {
+	m := map[string]any{}
 	in := bufio.NewScanner(os.Stdin)
 	for in.Scan() {
 		s := in.Text()
 		b := []byte(s)
 		if json.Valid(b) {
 			if b[0] == '[' {
-				m2 := []interface{}{}
+				var m2 []any
 				if err := json.Unmarshal(b, &m2); err != nil {
 					log.Fatalln("Cannot output JSON:", err)
 				}

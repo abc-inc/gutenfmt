@@ -37,7 +37,7 @@ func NewTab(w io.Writer) *Tab {
 }
 
 // Write formats the given value as a table and writes it to the underlying Writer.
-func (w Tab) Write(i interface{}) (int, error) {
+func (w Tab) Write(i any) (int, error) {
 	if i == nil {
 		return 0, nil
 	}
@@ -101,7 +101,7 @@ func (w Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 }
 
 // writeMap formats a map to a tabular string representation.
-func (w Tab) writeMap(tw *tabwriter.Writer, i interface{}) (int, error) {
+func (w Tab) writeMap(tw *tabwriter.Writer, i any) (int, error) {
 	f := formatter.FromMap("\t", "\t\n")
 	return formatter.FormatTab(tw, f, i)
 }
@@ -113,7 +113,7 @@ func (w Tab) writeMapSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 }
 
 // writeStruct formats a struct to a tabular string representation.
-func (w Tab) writeStruct(tw *tabwriter.Writer, i interface{}) (int, error) {
+func (w Tab) writeStruct(tw *tabwriter.Writer, i any) (int, error) {
 	f := formatter.FromStruct("\t", "\t\n", reflect.TypeOf(i))
 	return formatter.FormatTab(tw, f, i)
 }

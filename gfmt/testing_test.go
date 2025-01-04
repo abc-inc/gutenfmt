@@ -84,7 +84,7 @@ type JSONTypes struct {
 	Float32        float32
 	Float64        float64
 	Array          [2]string
-	Interface      interface{}
+	Interface      any
 	Map            map[string]int
 	Ptr            *User
 	Slice          []string
@@ -118,8 +118,8 @@ type AllTypes struct {
 	Array          [2]string
 	Chan           chan<- int
 	Func           func(string, string) *User
-	Interface      interface{}
-	Map            map[interface{}]interface{}
+	Interface      any
+	Map            map[any]any
 	Ptr            *User
 	Slice          []string
 	String         string
@@ -140,7 +140,7 @@ var allTypes = AllTypes{
 	make(chan<- int),
 	NewUser,
 	"",
-	make(map[interface{}]interface{}),
+	make(map[any]any),
 	NewUser("f", "l"),
 	[]string{"a", "b"},
 	"",

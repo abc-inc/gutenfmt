@@ -18,8 +18,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/gfmt"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/alecthomas/chroma/styles"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPrettyJSON_Write(t *testing.T) {
@@ -40,25 +41,27 @@ func TestPrettyJSON_Write(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		b := strings.Builder{}
+		w := gfmt.NewJSON(&b, gfmt.WithPretty(), gfmt.WithStyle(styles.Native))
 		t.Run(tt.name, func(t *testing.T) {
-			b := &strings.Builder{}
-			_, err := NewPrettyJSON(b).Write(tt.arg)
-			NoError(t, err)
-			Regexp(t, tt.want, b.String())
+			b.Reset()
+			_, err := w.Write(tt.arg)
+			require.NoError(t, err)
+			require.Regexp(t, tt.want, b.String())
 		})
 	}
 }
 
 func TestPrettyJSON_WriteJSONTypes(t *testing.T) {
-	b := &strings.Builder{}
-	_, err := NewPrettyJSON(b).Write(jsonTypes)
-	NoError(t, err)
-	Contains(t, b.String(), "\"Ptr\"\x1b[0m:")
+	b := strings.Builder{}
+	_, err := gfmt.NewJSON(&b, gfmt.WithStyle(styles.Native)).Write(jsonTypes)
+	require.NoError(t, err)
+	require.Contains(t, b.String(), "\"Ptr\"\x1b[0m:")
 }
 
 func TestPrettyJSON_WriteStruct(t *testing.T) {
-	b := &strings.Builder{}
-	_, err := NewPrettyJSON(b).Write(NewUser("John", "Doe"))
-	NoError(t, err)
-	Regexp(t, `\x1b\[\d+m.*\x1b\[\d+m"John Doe"`, b.String())
+	b := strings.Builder{}
+	_, err := gfmt.NewJSON(&b, gfmt.WithStyle(styles.Native)).Write(NewUser("John", "Doe"))
+	require.NoError(t, err)
+	require.Regexp(t, `\x1b\[\d+m.*\x1b\[\d+m"John Doe"`, b.String())
 }

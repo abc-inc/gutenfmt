@@ -61,13 +61,13 @@ func (w Tab) Write(i any) (int, error) {
 	switch typ.Kind() { //nolint:exhaustive
 	case reflect.Slice, reflect.Array:
 		_, err := w.writeSlice(tw, reflect.ValueOf(i))
-		return int(w.cw.cnt), err
+		return w.cw.cnt, err
 	case reflect.Map:
 		_, err := w.writeMap(tw, i)
-		return int(w.cw.cnt), err
+		return w.cw.cnt, err
 	default:
 		_, err := w.writeStruct(tw, i)
-		return int(w.cw.cnt), err
+		return w.cw.cnt, err
 	}
 }
 

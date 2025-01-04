@@ -24,13 +24,19 @@ import (
 	"strings"
 
 	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/alecthomas/chroma"
+	"github.com/alecthomas/chroma/formatters"
+	"github.com/alecthomas/chroma/lexers/j"
+	"github.com/alecthomas/chroma/styles"
 	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "gutenfmt",
-	Short: "Formats the input as CSV, JSON, YAML, ASCII table or name and value pairs.",
+	Short: "Formats the input as CSV, JSON, YAML, ASCII table, or name and value pairs.",
 	Long: `The gutenfmt utility formats its input to various output formats.
 
 Supported input formats:
@@ -40,13 +46,11 @@ Supported input formats:
 
 The following output formats are supported:
 - csv: Comma-separated values.
-- json: JSON string. This setting is the default for non-terminals.
-- jsonc: Colorized JSON. This setting is the default for interactive terminals.
+- json: JSON string. This setting is the default. Optionally, use --pretty.
 - table: ASCII table.
 - text: Name and value pairs, separated by equal sign.
 - tsv: Tab-separated name and value pairs (useful for grep, sed, or awk).
-- yaml: YAML, a machine-readable alternative to JSON.
-- yamlc: Colorized YAML.
+- yaml: YAML, a machine-readable alternative to JSON. Optionally, use --pretty.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ff, err := cmd.Flags().GetString("output")
@@ -55,18 +59,47 @@ The following output formats are supported:
 			os.Exit(1)
 		}
 
+		if list, _ := cmd.Flags().GetBool("list-themes"); list {
+			if !isatty.IsTerminal(os.Stdout.Fd()) {
+				fmt.Println(strings.Join(styles.Names(), "\n"))
+			} else {
+				ex := `{"types": [true, 1, "y"]} // example`
+				l := chroma.Coalesce(j.JSON)
+				for _, s := range styles.Names() {
+					fmt.Print("Theme: " + s + "\n    ")
+					it, _ := l.Tokenise(nil, ex)
+					if err := formatters.TTY.Format(os.Stdout, styles.Get(s), it); err != nil {
+						log.Fatal(err)
+					}
+					fmt.Print("\n\n")
+				}
+			}
+			return
+		}
+
+		if isatty.IsTerminal(os.Stdin.Fd()) && len(args) == 0 {
+			_ = cmd.Help()
+			os.Exit(1)
+		}
+
 		m := parse()
 		var w gfmt.Writer
 		switch strings.ToLower(ff) {
-		case "":
-			w = gfmt.NewAutoJSON(os.Stdout)
 		case "csv":
 			w = gfmt.NewText(os.Stdout)
 			w.(*gfmt.Text).Sep = ","
+		case "":
+			fallthrough
 		case "json":
-			w = gfmt.NewJSON(os.Stdout)
-		case "jsonc":
-			w = gfmt.NewPrettyJSON(os.Stdout)
+			p, _ := cmd.Flags().GetString("pretty")
+			p = strings.ToLower(p)
+			c, _ := cmd.Flags().GetString("color")
+			if p == "true" || p == "always" || (p == "auto" && isatty.IsTerminal(os.Stdout.Fd())) {
+				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle(styles.Get(c)))
+				w.(*gfmt.JSON).Indent = "  "
+			} else {
+				w = gfmt.NewJSON(os.Stdout)
+			}
 		case "table":
 			w = gfmt.NewTab(os.Stdout)
 		case "text":
@@ -76,12 +109,23 @@ The following output formats are supported:
 			w = gfmt.NewText(os.Stdout)
 			w.(*gfmt.Text).Sep = "\t"
 		case "yaml":
-			w = gfmt.NewYAML(os.Stdout)
-		case "yamlc":
-			w = gfmt.NewPrettyYAML(os.Stdout)
+			p, _ := cmd.Flags().GetString("pretty")
+			p = strings.ToLower(p)
+			if p == "true" || p == "always" || (p == "auto" && isatty.IsTerminal(os.Stdout.Fd())) {
+				c, _ := cmd.Flags().GetString("theme")
+				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle(styles.Get(c)))
+			} else {
+				w = gfmt.NewYAML(os.Stdout)
+			}
 		default:
 			_ = cmd.Help()
 			os.Exit(1)
+		}
+
+		if jq, _ := cmd.Flags().GetString("jq"); jq != "" {
+			w = gfmt.NewJQ(w, jq)
+		} else if q, _ := cmd.Flags().GetString("query"); q != "" {
+			w = gfmt.NewJMESPath(w, q)
 		}
 
 		if _, err := w.Write(m); err != nil {
@@ -95,13 +139,25 @@ func main() {
 		colorable.EnableColorsStdout(nil)
 	}
 
-	rootCmd.Flags().StringP("output", "o", "",
-		"The formatting style for command output (csv, json, jsonc, table, text, tsv, yaml, yamlc).")
+	rootCmd.Flags().String("jq", "", "Specify a jq filter for modifying the output.")
+	rootCmd.Flags().Bool("list-themes", false, "Display a list of supported themes for syntax highlighting.")
+	rootCmd.Flags().StringP("output", "o", "", "The formatting style for command output (csv, json, table, text, tsv, yaml).")
+	rootCmd.Flags().String("pretty", "auto", `Pretty-print the output (JSON or YAML). Possible values are "true"/"always", "false"/"never", "auto".`)
+	rootCmd.Flags().StringP("query", "q", "", "Specify a JMESPath query to use in filtering the output")
+	rootCmd.Flags().String("theme", "", "Set the theme for syntax highlighting. Use '--list-themes' to see all available themes.")
+
+	rootCmd.MarkFlagsMutuallyExclusive("jq", "query")
+	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if f.Name != "list-themes" {
+			rootCmd.MarkFlagsMutuallyExclusive("list-themes", f.Name)
+		}
+	})
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	fmt.Println()
 }
 
 // parse attempts to detect the input format e.g., JSON and returns the value,

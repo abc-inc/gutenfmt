@@ -15,6 +15,17 @@
 
 The following examples provide a brief overview of gutenfmt and its features.
 
+### Query Structured Data using JQ Filters or JMESPath Expressions
+
+```shell
+$ env | gutenfmt --jq .JAVA_HOME
+$ # or
+$ env | gutenfmt --query JAVA_HOME
+$ # instead of
+$ env | grep -E ^JAVA_HOME= | cut -d = -f 2
+
+````
+
 ### List OpenJDK Packages on a Debian-System as Colorized JSON
 
 ```shell

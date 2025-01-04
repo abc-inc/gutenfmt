@@ -18,8 +18,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/gfmt"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/alecthomas/chroma/styles"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPrettyYAML_Write(t *testing.T) {
@@ -40,25 +41,28 @@ func TestPrettyYAML_Write(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		b := &strings.Builder{}
+		w := gfmt.NewYAML(b, gfmt.WithStyle(styles.Native))
 		t.Run(tt.name, func(t *testing.T) {
-			b := &strings.Builder{}
-			_, err := NewPrettyYAML(b).Write(tt.arg)
-			NoError(t, err)
-			Regexp(t, tt.want, b.String())
+			b.Reset()
+			_, err := w.Write(tt.arg)
+			require.NoError(t, err)
+			require.Regexp(t, tt.want, b.String())
 		})
 	}
 }
 
 func TestPrettyYAML_WriteJSONTypes(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewPrettyYAML(b).Write(jsonTypes)
-	NoError(t, err)
-	Contains(t, b.String(), "mptr\x1b[0m:")
+	b.Reset()
+	_, err := gfmt.NewYAML(b, gfmt.WithStyle(styles.Native)).Write(jsonTypes)
+	require.NoError(t, err)
+	require.Contains(t, b.String(), "mptr\x1b[0m:")
 }
 
 func TestPrettyYAML_WriteStruct(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewPrettyYAML(b).Write(NewUser("John", "Doe"))
-	NoError(t, err)
-	Regexp(t, `\x1b\[\d+m.*\x1b\[\d+mUsername\x1b\[0m:.*\x1b\[0mJohn Doe\x1b`, b.String())
+	_, err := gfmt.NewYAML(b, gfmt.WithStyle(styles.Native)).Write(NewUser("John", "Doe"))
+	require.NoError(t, err)
+	require.Regexp(t, `\x1b\[\d+m.*\x1b\[\d+mUsername\x1b\[0m:.*\x1b\[0mJohn Doe\x1b`, b.String())
 }

@@ -23,26 +23,26 @@ import (
 
 	"github.com/abc-inc/gutenfmt/formatter"
 	"github.com/abc-inc/gutenfmt/internal/render"
+	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/lexers/y"
 	"gopkg.in/yaml.v3"
 )
 
 // YAML is a generic Writer that formats arbitrary values as YSON.
 type YAML struct {
-	w         io.Writer
+	writer    io.Writer
 	Formatter *formatter.CompFormatter
 	Indent    int
-	Style     string
+	Style     *chroma.Style
 }
 
 // NewYAML creates a new YAML Writer.
-func NewYAML(w io.Writer) *YAML {
-	return &YAML{w, formatter.NewComp(), 2, ""}
-}
-
-// NewPrettyYAML creates a new YAML Writer with indentation and coloring.
-func NewPrettyYAML(w io.Writer) *YAML {
-	return &YAML{w, formatter.NewComp(), 2, "native"}
+func NewYAML(w io.Writer, opts ...Opt) *YAML {
+	gw := &YAML{w, formatter.NewComp(), 2, nil}
+	for _, opt := range opts {
+		opt(gw)
+	}
+	return gw
 }
 
 // Write writes the YAML representation of the given value to the underlying Writer.
@@ -52,7 +52,7 @@ func (w YAML) Write(i any) (int, error) {
 	}
 
 	if s, err := w.Formatter.Format(i); err == nil {
-		return io.WriteString(w.w, s)
+		return io.WriteString(w.writer, s)
 	} else if !errors.Is(err, formatter.ErrUnsupported) {
 		return 0, err
 	}
@@ -61,7 +61,7 @@ func (w YAML) Write(i any) (int, error) {
 	if typ.Kind() == reflect.Ptr {
 		return w.Write(reflect.Indirect(reflect.ValueOf(i)).Interface())
 	} else if !isContainerType(typ.Kind()) {
-		return fmt.Fprint(w.w, render.ToString(i))
+		return fmt.Fprint(w.writer, render.ToString(i))
 	}
 
 	b := &strings.Builder{}
@@ -72,13 +72,13 @@ func (w YAML) Write(i any) (int, error) {
 	}
 
 	s := strings.TrimSuffix(b.String(), "\n")
-	if w.Style == "" {
-		return io.WriteString(w.w, s)
+	if w.Style == nil || w.Style.Name == "noop" {
+		return io.WriteString(w.writer, s)
 	}
 
-	cw := wrapCountingWriter(w.w)
+	cw := wrapCountingWriter(w.writer)
 	if err := highlight(cw, y.YAML, s, w.Style); err != nil {
 		return 0, err
 	}
-	return int(cw.cnt), nil
+	return cw.cnt, nil
 }

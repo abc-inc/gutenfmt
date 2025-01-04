@@ -21,9 +21,8 @@ import (
 	"testing"
 
 	"github.com/abc-inc/gutenfmt/formatter"
-
-	. "github.com/abc-inc/gutenfmt/gfmt"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTab_Write(t *testing.T) {
@@ -48,21 +47,21 @@ func TestTab_Write(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &strings.Builder{}
-			_, err := NewTab(b).Write(tt.arg)
-			NoError(t, err)
-			Regexp(t, tt.want, b.String())
+			_, err := gfmt.NewTab(b).Write(tt.arg)
+			require.NoError(t, err)
+			require.Regexp(t, tt.want, b.String())
 		})
 	}
 }
 
 func TestTab_WriteAllTypes(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewTab(b).Write(allTypes)
-	NoError(t, err)
+	_, err := gfmt.NewTab(b).Write(allTypes)
+	require.NoError(t, err)
 
 	s := regexp.MustCompile(`\s+\n`).ReplaceAllString(b.String(), "\n")
 
-	Equal(t, `DefName        DefName
+	require.Equal(t, `DefName        DefName
 OmitEmpty      OmitEmpty
 custom         CustOmitEmpty
 EmptyOmitEmpty`+`
@@ -97,9 +96,9 @@ StructSlice    af al <af.al@local> bf bl <bf.bl@local>`,
 
 func TestTab_WriteStruct(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewTab(b).Write(NewUser("John", "Doe"))
-	NoError(t, err)
-	Equal(t, "username John Doe \nemail    john.doe@local", b.String())
+	_, err := gfmt.NewTab(b).Write(NewUser("John", "Doe"))
+	require.NoError(t, err)
+	require.Equal(t, "username John Doe \nemail    john.doe@local", b.String())
 }
 
 func TestTab_WriteStructSlice(t *testing.T) {
@@ -110,9 +109,9 @@ func TestTab_WriteStructSlice(t *testing.T) {
 	}
 
 	b := &strings.Builder{}
-	_, err := NewTab(b).Write([]data{{A: 'a', B: "b", C: true}, {A: "d", B: "e", C: "f"}})
-	NoError(t, err)
-	Equal(t, "A   B   C    \n97  b   true \nd   e   f", b.String())
+	_, err := gfmt.NewTab(b).Write([]data{{A: 'a', B: "b", C: true}, {A: "d", B: "e", C: "f"}})
+	require.NoError(t, err)
+	require.Equal(t, "A   B   C    \n97  b   true \nd   e   f", b.String())
 }
 
 func TestTab_WriteStructPtrSlice(t *testing.T) {
@@ -121,9 +120,9 @@ func TestTab_WriteStructPtrSlice(t *testing.T) {
 	}
 
 	b := &strings.Builder{}
-	_, err := NewTab(b).Write([]*data{{A: "1", B: "2"}, {A: "3", B: "4"}})
-	NoError(t, err)
-	Equal(t, "A   B   \n1   2   \n3   4", b.String())
+	_, err := gfmt.NewTab(b).Write([]*data{{A: "1", B: "2"}, {A: "3", B: "4"}})
+	require.NoError(t, err)
+	require.Equal(t, "A   B   \n1   2   \n3   4", b.String())
 }
 
 func TestTab_WriteMap(t *testing.T) {
@@ -138,16 +137,16 @@ func TestTab_WriteMapSliceCustom(t *testing.T) {
 	msi := []map[string]int{{"c": 1, "d": 2}, {"c": 3, "d": 4}}
 
 	b := &strings.Builder{}
-	w := NewTab(b)
+	w := gfmt.NewTab(b)
 	w.Formatter.SetFormatter(reflect.TypeOf(mss).String(),
 		formatter.AsTab(formatter.FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("a"))))
 
 	_, err := w.Write(mss)
-	NoError(t, err)
-	Equal(t, "a   \nw   \ny", b.String())
+	require.NoError(t, err)
+	require.Equal(t, "a   \nw   \ny", b.String())
 
 	b.Reset()
 	_, err = w.Write(msi)
-	NoError(t, err)
-	Regexp(t, "(c   d   \n1   2   \n3   4)|(d   c   \n2   1   \n4   3)", b.String())
+	require.NoError(t, err)
+	require.Regexp(t, "(c   d   \n1   2   \n3   4)|(d   c   \n2   1   \n4   3)", b.String())
 }

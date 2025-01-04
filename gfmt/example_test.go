@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/abc-inc/gutenfmt/formatter"
-	. "github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/abc-inc/gutenfmt/gfmt"
 )
 
 var u = *NewUser("John", "Doe")
@@ -46,7 +46,7 @@ func ExampleJSON_Write_struct() {
 }
 
 func ExampleJSON_Write_structSlice() {
-	w := NewJSON(os.Stdout)
+	w := gfmt.NewJSON(os.Stdout)
 
 	_, _ = w.Write([]User{u, u})
 	// Output:
@@ -76,7 +76,7 @@ func ExampleTab_Write_struct() {
 
 func ExampleTab_Write_structSlice() {
 	b := &strings.Builder{}
-	w := NewTab(b)
+	w := gfmt.NewTab(b)
 	typ := reflect.TypeOf([]Team{}).String()
 	w.Formatter.SetFormatter(typ, formatter.AsTab(formatter.Func(func(i any) (string, error) {
 		b := strings.Builder{}

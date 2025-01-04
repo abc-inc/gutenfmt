@@ -18,14 +18,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/gfmt"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/stretchr/testify/require"
 )
-
-func TestNewAutoJSON(t *testing.T) {
-	w := NewAutoJSON(&strings.Builder{})
-	IsType(t, &JSON{}, w)
-}
 
 func TestJSON_Write(t *testing.T) {
 	tests := []struct {
@@ -47,24 +42,24 @@ func TestJSON_Write(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &strings.Builder{}
-			_, err := NewJSON(b).Write(tt.arg)
-			NoError(t, err)
-			Regexp(t, tt.want, b.String())
+			_, err := gfmt.NewJSON(b).Write(tt.arg)
+			require.NoError(t, err)
+			require.Regexp(t, tt.want, b.String())
 		})
 	}
 }
 
 func TestJSON_WriteJSONTypes(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewJSON(b).Write(jsonTypes)
-	NoError(t, err)
-	Contains(t, b.String(), "\"Ptr\":{\"username\":\"")
+	_, err := gfmt.NewJSON(b).Write(jsonTypes)
+	require.NoError(t, err)
+	require.Contains(t, b.String(), "\"Ptr\":{\"username\":\"")
 }
 
 func TestJSON_WriteStruct(t *testing.T) {
 	b := &strings.Builder{}
-	n, err := NewJSON(b).Write(NewUser("John", "Doe"))
-	NoError(t, err)
-	Equal(t, 48, n)
-	Contains(t, b.String(), "\"username\":\"John Doe\",\"email\":\"john.doe@local\"")
+	n, err := gfmt.NewJSON(b).Write(NewUser("John", "Doe"))
+	require.NoError(t, err)
+	require.Equal(t, 48, n)
+	require.Contains(t, b.String(), "\"username\":\"John Doe\",\"email\":\"john.doe@local\"")
 }

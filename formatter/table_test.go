@@ -18,18 +18,18 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/formatter"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/formatter"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAsTab(t *testing.T) {
 	ks := []reflect.Value{reflect.ValueOf("a"), reflect.ValueOf("long_key")}
 	m := map[string]int{"a": 1, "long_key": 2}
 
-	f := FromMapKeys("\t", "\t\n", ks...)
+	f := formatter.FromMapKeys("\t", "\t\n", ks...)
 	s, _ := f.Format(m)
-	Equal(t, "a\t1\t\nlong_key\t2\t\n", s)
+	require.Equal(t, "a\t1\t\nlong_key\t2\t\n", s)
 
-	s, _ = AsTab(f).Format(m)
-	Equal(t, "a        1   \nlong_key 2   \n", s)
+	s, _ = formatter.AsTab(f).Format(m)
+	require.Equal(t, "a        1   \nlong_key 2   \n", s)
 }

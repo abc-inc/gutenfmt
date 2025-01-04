@@ -17,21 +17,21 @@ package render_test
 import (
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/internal/render"
-	. "github.com/stretchr/testify/assert"
+	"github.com/abc-inc/gutenfmt/internal/render"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestToString(t *testing.T) {
-	Equal(t, "", ToString(nil))
-	Equal(t, "x", ToString("x"))
-	Equal(t, "true", ToString(true))
+	assert.Equal(t, "", render.ToString(nil))
+	assert.Equal(t, "x", render.ToString("x"))
+	assert.Equal(t, "true", render.ToString(true))
 
-	Equal(t, "", ToString([]int{}))
-	Equal(t, "", ToString([0]int{}))
-	Equal(t, "1", ToString([]int{1}))
-	Equal(t, "1 2", ToString(&[]int{1, 2}))
+	assert.Equal(t, "", render.ToString([]int{}))
+	assert.Equal(t, "", render.ToString([0]int{}))
+	assert.Equal(t, "1", render.ToString([]int{1}))
+	assert.Equal(t, "1 2", render.ToString(&[]int{1, 2}))
 
-	Equal(t, "chan int", ToString(make(chan int)))
+	assert.Equal(t, "chan int", render.ToString(make(chan int)))
 
-	Regexp(t, `/internal/render_test\.TestToString$`, ToString(TestToString))
+	assert.Regexp(t, `/internal/render_test\.TestToString$`, render.ToString(TestToString))
 }

@@ -18,10 +18,10 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_wrapCountingWriter(t *testing.T) {
 	cw := wrapCountingWriter(os.Stdout)
-	Same(t, cw, wrapCountingWriter(cw))
+	require.Same(t, cw, wrapCountingWriter(cw))
 }

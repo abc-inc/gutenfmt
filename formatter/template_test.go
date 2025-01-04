@@ -18,13 +18,13 @@ import (
 	"testing"
 	"text/template"
 
-	. "github.com/abc-inc/gutenfmt/formatter"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/formatter"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFromTemplate(t *testing.T) {
 	text := "mailto:{{.Mail}}\nDear {{.Name}}"
-	f := FromTemplate(template.Must(template.New("letter").Parse(text)))
+	f := formatter.FromTemplate(template.Must(template.New("letter").Parse(text)))
 	s, _ := f.Format(map[string]string{"Name": "Jane Doe", "Mail": "jane.doe@local"})
-	Equal(t, "mailto:jane.doe@local\nDear Jane Doe", s)
+	require.Equal(t, "mailto:jane.doe@local\nDear Jane Doe", s)
 }

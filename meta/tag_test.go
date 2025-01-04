@@ -18,8 +18,8 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/meta"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/meta"
+	"github.com/stretchr/testify/assert"
 )
 
 type User struct {
@@ -35,10 +35,10 @@ type KeyPair struct {
 }
 
 func TestTagResolver_lookup(t *testing.T) {
-	fs := TagResolver{TagName: "yaml"}.Lookup(reflect.TypeOf(User{}))
-	Equal(t, 2, len(fs))
-	Equal(t, "Username", fs[0].Name)
-	Equal(t, "Name", fs[0].Field)
-	Equal(t, "E-Mail", fs[1].Name)
-	Equal(t, "Mail", fs[1].Field)
+	fs := meta.TagResolver{TagName: "yaml"}.Lookup(reflect.TypeOf(User{}))
+	assert.Equal(t, 2, len(fs))
+	assert.Equal(t, "Username", fs[0].Name)
+	assert.Equal(t, "Name", fs[0].Field)
+	assert.Equal(t, "E-Mail", fs[1].Name)
+	assert.Equal(t, "Mail", fs[1].Field)
 }

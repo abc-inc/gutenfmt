@@ -19,15 +19,15 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/abc-inc/gutenfmt/formatter"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/formatter"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFromStruct(t *testing.T) {
 	u := NewUser("Jane", "Doe")
-	f := FromStruct(": ", ", ", reflect.TypeOf(u))
+	f := formatter.FromStruct(": ", ", ", reflect.TypeOf(u))
 	s, _ := f.Format(u)
-	Equal(t, "username: Jane Doe, email: jane.doe@local", s)
+	require.Equal(t, "username: Jane Doe, email: jane.doe@local", s)
 }
 
 func TestFromStruct_Anonymous(t *testing.T) {
@@ -47,15 +47,15 @@ func TestFromStruct_Anonymous(t *testing.T) {
 		serviceDate time.Time
 	}{m, 1337, time.Now()}
 
-	f := FromStruct(": ", ", ", reflect.TypeOf(car))
+	f := formatter.FromStruct(": ", ", ", reflect.TypeOf(car))
 	s, err := f.Format(car)
-	NoError(t, err)
-	Equal(t, "Type: {Company Awesome 5}, Miles: 1337", s)
+	require.NoError(t, err)
+	require.Equal(t, "Type: {Company Awesome 5}, Miles: 1337", s)
 }
 
 func TestFromStructSlice(t *testing.T) {
 	u := NewUser("Jane", "Doe")
-	f := FromStructSlice(" | ", "\n", reflect.TypeOf(u))
+	f := formatter.FromStructSlice(" | ", "\n", reflect.TypeOf(u))
 	s, _ := f.Format([]*User{u})
-	Equal(t, "username | email\nJane Doe | jane.doe@local", s)
+	require.Equal(t, "username | email\nJane Doe | jane.doe@local", s)
 }

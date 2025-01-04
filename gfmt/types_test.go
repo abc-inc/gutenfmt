@@ -21,8 +21,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/gfmt"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/alecthomas/chroma/styles"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_Write_Types(t *testing.T) {
@@ -33,7 +34,7 @@ func Test_Write_Types(t *testing.T) {
 	}
 	type unit struct {
 		b *strings.Builder
-		w Writer
+		w gfmt.Writer
 	}
 
 	m := make(map[string]int)
@@ -68,10 +69,10 @@ func Test_Write_Types(t *testing.T) {
 		sTab := &strings.Builder{}
 		sText := &strings.Builder{}
 
-		prettyJSON := NewPrettyJSON(sPrettyJSON)
-		json := NewJSON(sJSON)
-		tab := NewTab(sTab)
-		text := NewText(sText)
+		prettyJSON := gfmt.NewJSON(sPrettyJSON, gfmt.WithPretty(), gfmt.WithStyle(styles.Native))
+		json := gfmt.NewJSON(sJSON)
+		tab := gfmt.NewTab(sTab)
+		text := gfmt.NewText(sText)
 
 		us := []unit{
 			{sPrettyJSON, prettyJSON},
@@ -85,22 +86,22 @@ func Test_Write_Types(t *testing.T) {
 				want := tt.out
 
 				postProc := func(s string) string { return s }
-				if _, ok := u.w.(*Text); ok {
+				if _, ok := u.w.(*gfmt.Text); ok {
 					postProc = unJSON
-				} else if _, ok := u.w.(*Tab); ok {
+				} else if _, ok := u.w.(*gfmt.Tab); ok {
 					postProc = normalizeTable
 				}
 
 				_, err := u.w.Write(tt.in)
-				NoError(t, err)
-				Equal(t, want, u.b.String())
+				require.NoError(t, err)
+				require.Equal(t, want, u.b.String())
 
-				if f, ok := u.w.(*JSON); ok && f.Style != "" {
+				if f, ok := u.w.(*gfmt.JSON); ok && f.Style != nil {
 					// pretty JSON is too hard to verify, so we skip further tests
 					return
 				}
 
-				if _, ok := u.w.(*JSON); ok && tt.in == want {
+				if _, ok := u.w.(*gfmt.JSON); ok && tt.in == want {
 					// JSON quotes strings, so the expected output needs to be quoted
 					want = "\"" + want + "\""
 				}
@@ -118,7 +119,7 @@ func Test_Write_Types(t *testing.T) {
 				require.Equal(t, postProc(fmt.Sprintf("[%s,%s]", want, want)), u.b.String())
 
 				// map
-				if _, ok := u.w.(*JSON); !ok {
+				if _, ok := u.w.(*gfmt.JSON); !ok {
 					// JSON does not support arbitrary maps
 					u.b.Reset()
 					_, err = u.w.Write(map[any]any{tt.in: tt.in})

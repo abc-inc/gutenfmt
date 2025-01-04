@@ -19,8 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/gfmt"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/stretchr/testify/require"
 )
 
 func TestText_Write(t *testing.T) {
@@ -44,9 +44,9 @@ func TestText_Write(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &strings.Builder{}
-			_, err := NewText(b).Write(tt.arg)
-			NoError(t, err)
-			Regexp(t, tt.want, b.String())
+			_, err := gfmt.NewText(b).Write(tt.arg)
+			require.NoError(t, err)
+			require.Regexp(t, tt.want, b.String())
 		})
 	}
 }
@@ -58,15 +58,15 @@ func TestText_WriteAllTypes(t *testing.T) {
 		return i.(AllTypes).DefName, nil
 	})
 	_, err := w.Write(allTypes)
-	NoError(t, err)
-	Equal(t, "DefName", b.String())
+	require.NoError(t, err)
+	require.Equal(t, "DefName", b.String())
 }
 
 func TestText_WriteStruct(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewText(b).Write(NewUser("John", "Doe"))
-	NoError(t, err)
-	Equal(t, "John Doe <john.doe@local>", b.String())
+	_, err := gfmt.NewText(b).Write(NewUser("John", "Doe"))
+	require.NoError(t, err)
+	require.Equal(t, "John Doe <john.doe@local>", b.String())
 }
 
 func TestText_WriteStructSlice(t *testing.T) {
@@ -77,9 +77,9 @@ func TestText_WriteStructSlice(t *testing.T) {
 	}
 
 	b := &strings.Builder{}
-	_, err := NewText(b).Write([]data{{A: 'a', B: "b", C: true}, {A: "d", B: "e", C: "f"}})
-	NoError(t, err)
-	Equal(t, "A:B:C\n97:b:true\nd:e:f", b.String())
+	_, err := gfmt.NewText(b).Write([]data{{A: 'a', B: "b", C: true}, {A: "d", B: "e", C: "f"}})
+	require.NoError(t, err)
+	require.Equal(t, "A:B:C\n97:b:true\nd:e:f", b.String())
 }
 
 func TestText_WriteStructPtrSlice(t *testing.T) {
@@ -88,21 +88,21 @@ func TestText_WriteStructPtrSlice(t *testing.T) {
 	}
 
 	b := &strings.Builder{}
-	_, err := NewText(b).Write([]*data{{A: "1", B: "2"}, {A: "3", B: "4"}})
-	NoError(t, err)
-	Equal(t, "A:B\n1:2\n3:4", b.String())
+	_, err := gfmt.NewText(b).Write([]*data{{A: "1", B: "2"}, {A: "3", B: "4"}})
+	require.NoError(t, err)
+	require.Equal(t, "A:B\n1:2\n3:4", b.String())
 }
 
 func TestText_WriteMap(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewText(b).Write(map[string]interface{}{"a": 'a', "b": "b", "c": true})
-	NoError(t, err)
-	Regexp(t, "([a-c]:(97|b|true)\n){2}([a-c]:(97|b|true))", b.String())
+	_, err := gfmt.NewText(b).Write(map[string]any{"a": 'a', "b": "b", "c": true})
+	require.NoError(t, err)
+	require.Regexp(t, "([a-c]:(97|b|true)\n){2}([a-c]:(97|b|true))", b.String())
 }
 
 func TestText_WriteMapSlice(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewText(b).Write([]map[string]interface{}{{"a": 'a', "b": true}, {"a": "c", "b": "d"}})
-	NoError(t, err)
-	Regexp(t, "^(a:b\n97:true\nc:d)|(b:a\ntrue:97\nd:c)", b.String())
+	_, err := gfmt.NewText(b).Write([]map[string]any{{"a": 'a', "b": true}, {"a": "c", "b": "d"}})
+	require.NoError(t, err)
+	require.Regexp(t, "^(a:b\n97:true\nc:d)|(b:a\ntrue:97\nd:c)", b.String())
 }

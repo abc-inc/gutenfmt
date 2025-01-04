@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/abc-inc/gutenfmt/gfmt"
-	. "github.com/stretchr/testify/require"
+	"github.com/abc-inc/gutenfmt/gfmt"
+	"github.com/stretchr/testify/require"
 )
 
 func TestYAML_Write(t *testing.T) {
@@ -43,24 +43,24 @@ func TestYAML_Write(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &strings.Builder{}
-			_, err := NewYAML(b).Write(tt.arg)
-			NoError(t, err)
-			Regexp(t, tt.want, b.String())
+			_, err := gfmt.NewYAML(b).Write(tt.arg)
+			require.NoError(t, err)
+			require.Regexp(t, tt.want, b.String())
 		})
 	}
 }
 
 func TestYAML_WriteJSONTypes(t *testing.T) {
 	b := &strings.Builder{}
-	_, err := NewYAML(b).Write(jsonTypes)
-	NoError(t, err)
-	Contains(t, b.String(), "structslice:\n  - Username: af al\n    E-Mail: af.al@local\n  - Username: bf bl\n")
+	_, err := gfmt.NewYAML(b).Write(jsonTypes)
+	require.NoError(t, err)
+	require.Contains(t, b.String(), "structslice:\n  - Username: af al\n    E-Mail: af.al@local\n  - Username: bf bl\n")
 }
 
 func TestYAML_WriteStruct(t *testing.T) {
 	b := &strings.Builder{}
-	n, err := NewYAML(b).Write(NewUser("John", "Doe"))
-	NoError(t, err)
-	Equal(t, 41, n)
-	Equal(t, b.String(), "Username: John Doe\nE-Mail: john.doe@local")
+	n, err := gfmt.NewYAML(b).Write(NewUser("John", "Doe"))
+	require.NoError(t, err)
+	require.Equal(t, 41, n)
+	require.Equal(t, b.String(), "Username: John Doe\nE-Mail: john.doe@local")
 }

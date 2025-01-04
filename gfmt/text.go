@@ -25,7 +25,7 @@ import (
 
 // Text is a generic Writer that formats arbitrary values as plain text.
 type Text struct {
-	w         io.Writer
+	writer    io.Writer
 	Formatter *formatter.CompFormatter
 	Sep       string
 	Delim     string
@@ -43,7 +43,7 @@ func (w Text) Write(i any) (int, error) {
 	}
 
 	if s, err := w.Formatter.Format(i); err == nil {
-		return io.WriteString(w.w, s)
+		return io.WriteString(w.writer, s)
 	} else if !errors.Is(err, formatter.ErrUnsupported) {
 		return 0, err
 	}
@@ -52,9 +52,9 @@ func (w Text) Write(i any) (int, error) {
 	if typ.Kind() == reflect.Ptr {
 		return w.Write(reflect.Indirect(reflect.ValueOf(i)).Interface())
 	} else if str, ok := i.(fmt.Stringer); ok {
-		return fmt.Fprint(w.w, str.String())
+		return fmt.Fprint(w.writer, str.String())
 	} else if !isContainerType(typ.Kind()) {
-		return fmt.Fprint(w.w, i)
+		return fmt.Fprint(w.writer, i)
 	}
 
 	switch typ.Kind() { //nolint:exhaustive
@@ -90,7 +90,7 @@ func (w Text) writeSlice(v reflect.Value) (int, error) {
 
 	cnt := n
 	for idx := 1; idx < v.Len(); idx++ {
-		n, err := io.WriteString(w.w, w.Delim)
+		n, err := io.WriteString(w.writer, w.Delim)
 		cnt += n
 		if err != nil {
 			return cnt, err
@@ -118,7 +118,7 @@ func (w Text) writeMap(iter *reflect.MapIter) (int, error) {
 	cnt := n
 
 	for iter.Next() {
-		n, err := io.WriteString(w.w, w.Delim)
+		n, err := io.WriteString(w.writer, w.Delim)
 		cnt += n
 		if err != nil {
 			return cnt, err
@@ -140,7 +140,7 @@ func (w Text) writeMapSlice(i any) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return io.WriteString(w.w, s)
+	return io.WriteString(w.writer, s)
 }
 
 func (w Text) writeStruct(v reflect.Value) (int, error) {
@@ -149,7 +149,7 @@ func (w Text) writeStruct(v reflect.Value) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return io.WriteString(w.w, s)
+	return io.WriteString(w.writer, s)
 }
 
 func (w Text) writeStructSlice(v reflect.Value) (int, error) {
@@ -158,7 +158,7 @@ func (w Text) writeStructSlice(v reflect.Value) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return io.WriteString(w.w, s)
+	return io.WriteString(w.writer, s)
 }
 
 // writeKeyVal writes the text representation of a map entry to the underlying Writer.
@@ -171,7 +171,7 @@ func (w Text) writeKeyVal(k, v any) (int, error) {
 		return cnt, err
 	}
 
-	n, err = io.WriteString(w.w, w.Sep)
+	n, err = io.WriteString(w.writer, w.Sep)
 	cnt += n
 	if err != nil {
 		return cnt, err

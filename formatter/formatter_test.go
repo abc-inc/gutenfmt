@@ -21,25 +21,25 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCompFormatter_Format(t *testing.T) {
 	f := NewComp()
 	_, err := f.Format("x")
-	Error(t, err)
+	require.Error(t, err)
 
 	f.SetFormatterFunc("string", func(i any) (string, error) {
 		return strings.ToUpper(i.(string)), nil
 	})
 	s, err := f.Format("x")
-	NoError(t, err)
-	Equal(t, "X", s)
+	require.NoError(t, err)
+	require.Equal(t, "X", s)
 
 	f.SetFormatter("string", NoopFormatter())
 	s, err = f.Format("x")
-	NoError(t, err)
-	Equal(t, "", s)
+	require.NoError(t, err)
+	require.Equal(t, "", s)
 }
 
 func TestTypeName(t *testing.T) {
@@ -53,17 +53,17 @@ func TestTypeName(t *testing.T) {
 	s1 := struct{ string }{""}
 	s2 := struct{ s string }{""}
 
-	Equal(t, "int", typeName(reflect.TypeOf(math.MaxInt16)))
-	Equal(t, "int", typeName(reflect.TypeOf(math.MaxInt32)))
-	Equal(t, "int", typeName(reflect.TypeOf(math.MaxInt64)))
-	Equal(t, "string", typeName(reflect.TypeOf("")))
+	require.Equal(t, "int", typeName(reflect.TypeOf(math.MaxInt16)))
+	require.Equal(t, "int", typeName(reflect.TypeOf(math.MaxInt32)))
+	require.Equal(t, "int", typeName(reflect.TypeOf(math.MaxInt64)))
+	require.Equal(t, "string", typeName(reflect.TypeOf("")))
 
-	Equal(t, "User", typeName(reflect.TypeOf(User{})))
-	Equal(t, "Decoder", typeName(reflect.TypeOf(json.Decoder{})))
+	require.Equal(t, "User", typeName(reflect.TypeOf(User{})))
+	require.Equal(t, "Decoder", typeName(reflect.TypeOf(json.Decoder{})))
 
-	Equal(t, "struct {}", typeName(reflect.TypeOf(s0)))
-	Equal(t, "struct { string }", typeName(reflect.TypeOf(s1)))
-	Equal(t, "struct { s string }", typeName(reflect.TypeOf(s2)))
+	require.Equal(t, "struct {}", typeName(reflect.TypeOf(s0)))
+	require.Equal(t, "struct { string }", typeName(reflect.TypeOf(s1)))
+	require.Equal(t, "struct { s string }", typeName(reflect.TypeOf(s2)))
 
 	require.Equal(t, "map[interface {}]bool", typeName(reflect.TypeOf(map[any]bool{})))
 }

@@ -86,9 +86,9 @@ func Test_Write_Types(t *testing.T) {
 				want := tt.out
 
 				postProc := func(s string) string { return s }
-				if _, ok := u.w.(*gfmt.Text); ok {
+				if _, okText := u.w.(*gfmt.Text); okText {
 					postProc = unJSON
-				} else if _, ok := u.w.(*gfmt.Tab); ok {
+				} else if _, okTab := u.w.(*gfmt.Tab); okTab {
 					postProc = normalizeTable
 				}
 

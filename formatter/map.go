@@ -62,8 +62,8 @@ func FromMapSlice(sep, delim string) Formatter {
 		return false
 	}
 
-	return Func(func(i any) (string, error) {
-		v := reflect.ValueOf(i)
+	return Func(func(mapSlice any) (string, error) {
+		v := reflect.ValueOf(mapSlice)
 		if v.Len() == 0 {
 			return "", nil
 		}
@@ -72,8 +72,8 @@ func FromMapSlice(sep, delim string) Formatter {
 
 		var ks []string
 		e := reflect.ValueOf(v.Index(0).Interface())
-		for idx, k := range e.MapKeys() {
-			if idx > 0 {
+		for i, k := range e.MapKeys() {
+			if i > 0 {
 				b.WriteString(sep)
 			}
 			n := render.ToString(k.Interface())
@@ -90,9 +90,8 @@ func FromMapSlice(sep, delim string) Formatter {
 				if idx > 0 {
 					b.WriteString(sep)
 				}
-				v := m.MapIndex(reflect.ValueOf(k))
-				if v.IsValid() {
-					b.WriteString(render.ToString(v))
+				if val := m.MapIndex(reflect.ValueOf(k)); val.IsValid() {
+					b.WriteString(render.ToString(val))
 				}
 			}
 		}
@@ -107,8 +106,8 @@ func FromMapSliceKeys(sep, delim string, ks ...reflect.Value) Formatter {
 		return NoopFormatter()
 	}
 
-	return Func(func(i any) (string, error) {
-		v := reflect.ValueOf(i)
+	return Func(func(mapSlice any) (string, error) {
+		v := reflect.ValueOf(mapSlice)
 		b := &strings.Builder{}
 
 		b.WriteString(render.ToString(ks[0].Interface()))
@@ -123,9 +122,8 @@ func FromMapSliceKeys(sep, delim string, ks ...reflect.Value) Formatter {
 				if idx > 0 {
 					b.WriteString(sep)
 				}
-				v := v.Index(i).MapIndex(k)
-				if v.IsValid() {
-					b.WriteString(render.ToString(v))
+				if val := v.Index(i).MapIndex(k); val.IsValid() {
+					b.WriteString(render.ToString(val))
 				}
 			}
 		}

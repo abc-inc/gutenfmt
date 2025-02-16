@@ -75,27 +75,27 @@ func evalJQ(val any, output io.Writer, expr string) error {
 
 	iter := code.Run(val)
 	for {
-		v, ok := iter.Next()
-		if !ok {
+		v, hasNext := iter.Next()
+		if !hasNext {
 			break
 		}
-		if err, isErr := v.(error); isErr {
+		if vErr, isErr := v.(error); isErr {
 			var e *gojq.HaltError
-			if errors.As(err, &e) && e.Value() == nil {
+			if errors.As(vErr, &e) && e.Value() == nil {
 				break
 			}
-			return err
+			return vErr
 		}
 		if text, ok := jsonScalarToString(v); ok {
-			if _, err := fmt.Fprintln(output, text); err != nil {
+			if _, err = fmt.Fprintln(output, text); err != nil {
 				return err
 			}
 		} else {
-			j, err := json.Marshal(v)
-			if err != nil {
+			var j []byte
+			if j, err = json.Marshal(v); err != nil {
 				return err
 			}
-			if _, err := fmt.Fprintln(output, string(j)); err != nil {
+			if _, err = fmt.Fprintln(output, string(j)); err != nil {
 				return err
 			}
 		}
@@ -111,9 +111,8 @@ func jsonScalarToString(input interface{}) (string, bool) {
 	case float64:
 		if math.Trunc(tt) == tt {
 			return strconv.FormatFloat(tt, 'f', 0, 64), true
-		} else {
-			return strconv.FormatFloat(tt, 'f', 2, 64), true
 		}
+		return strconv.FormatFloat(tt, 'f', 2, 64), true
 	case nil:
 		return "", true
 	case bool:

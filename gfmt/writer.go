@@ -20,6 +20,7 @@ import (
 
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters"
+	"github.com/alecthomas/chroma/styles"
 )
 
 // Writer is the interface that wraps the generic Write method.
@@ -118,6 +119,9 @@ func WithPretty() Opt {
 
 // WithStyle sets the syntax highlighting style for the given Writer.
 func WithStyle(s *chroma.Style) Opt {
+	if s == styles.Fallback {
+		s = nil
+	}
 	return func(w Writer) {
 		switch x := w.(type) {
 		case *JSON:

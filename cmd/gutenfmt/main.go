@@ -15,7 +15,7 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -52,6 +52,7 @@ The following output formats are supported:
 - tsv: Tab-separated name and value pairs (useful for grep, sed, or awk).
 - yaml: YAML, a machine-readable alternative to JSON. Optionally, use --pretty.
 `,
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ff, err := cmd.Flags().GetString("output")
 		if err != nil {
@@ -82,7 +83,11 @@ The following output formats are supported:
 			os.Exit(1)
 		}
 
-		m := parse()
+		m := parse(append(args, "-")[0])
+		th, _ := cmd.Flags().GetString("theme")
+		p, _ := cmd.Flags().GetString("pretty")
+		p = strings.ToLower(p)
+
 		var w gfmt.Writer
 		switch strings.ToLower(ff) {
 		case "csv":
@@ -91,14 +96,11 @@ The following output formats are supported:
 		case "":
 			fallthrough
 		case "json":
-			p, _ := cmd.Flags().GetString("pretty")
-			p = strings.ToLower(p)
-			c, _ := cmd.Flags().GetString("color")
 			if p == "true" || p == "always" || (p == "auto" && isatty.IsTerminal(os.Stdout.Fd())) {
-				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle(styles.Get(c)))
+				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle(styles.Get(th)), gfmt.WithPretty())
 				w.(*gfmt.JSON).Indent = "  "
 			} else {
-				w = gfmt.NewJSON(os.Stdout)
+				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle(styles.Get(th)))
 			}
 		case "table":
 			w = gfmt.NewTab(os.Stdout)
@@ -109,13 +111,10 @@ The following output formats are supported:
 			w = gfmt.NewText(os.Stdout)
 			w.(*gfmt.Text).Sep = "\t"
 		case "yaml":
-			p, _ := cmd.Flags().GetString("pretty")
-			p = strings.ToLower(p)
 			if p == "true" || p == "always" || (p == "auto" && isatty.IsTerminal(os.Stdout.Fd())) {
-				c, _ := cmd.Flags().GetString("theme")
-				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle(styles.Get(c)))
+				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle(styles.Get(th)), gfmt.WithPretty())
 			} else {
-				w = gfmt.NewYAML(os.Stdout)
+				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle(styles.Get(th)))
 			}
 		default:
 			_ = cmd.Help()
@@ -162,28 +161,32 @@ func main() {
 
 // parse attempts to detect the input format e.g., JSON and returns the value,
 // which could be a key-value pairs (map) or a slice thereof.
-func parse() any {
-	m := map[string]any{}
-	in := bufio.NewScanner(os.Stdin)
-	for in.Scan() {
-		s := in.Text()
-		b := []byte(s)
-		if json.Valid(b) {
-			if b[0] == '[' {
-				var m2 []any
-				if err := json.Unmarshal(b, &m2); err != nil {
-					log.Fatalln("Cannot output JSON:", err)
-				}
-				m[""] = m2
-			} else if err := json.Unmarshal(b, &m); err != nil {
-				log.Fatalln("Cannot output JSON:", err)
-			}
-		} else if idx := strings.IndexAny(s, "=:\t"); idx > 0 {
-			m[s[:idx]] = s[idx+1:]
+func parse(name string) any {
+	var err error
+	r := os.Stdin
+	if name != "-" {
+		r, err = os.Open(name)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer func() { _ = r.Close() }()
+	}
+
+	var m any
+	var bs []byte
+	kv := map[string]any{}
+	d := json.NewDecoder(r)
+	if err = d.Decode(&m); err != nil {
+		bs, err = os.ReadFile(name)
+		if err != nil {
+			log.Fatalln(err) //nolint:gocritic
+		}
+		if idx := bytes.IndexAny(bs, "=:\t"); idx > 0 {
+			kv[string(bs[:idx])] = string(bs[idx+1:])
 		}
 	}
-	if _, ok := m[""]; ok {
-		return m[""]
+	if len(kv) > 0 {
+		return kv
 	}
 	return m
 }

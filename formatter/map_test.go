@@ -22,36 +22,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var m = map[string]bool{"y": true, "n": false}
+var truth = map[string]bool{"y": true, "n": false}
 
 func TestFromMap(t *testing.T) {
 	f := formatter.FromMap("\t", "\t\n")
-	s, _ := f.Format(m)
+	s, _ := f.Format(truth)
 	require.Regexp(t, "(y\ttrue\t\nn\tfalse)|(n\tfalse\t\ny\ttrue)", s)
 }
 
 func TestFromMapKeys_duplicate(t *testing.T) {
 	f := formatter.FromMapKeys("\t", "\t\n", reflect.ValueOf("y"), reflect.ValueOf("y"))
-	s, _ := f.Format(m)
+	s, _ := f.Format(truth)
 	require.Equal(t, "y\ttrue\t\ny\ttrue\t\n", s)
 
 	f = formatter.FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("y"), reflect.ValueOf("y"))
-	s, _ = f.Format([]map[string]bool{m, m})
+	s, _ = f.Format([]map[string]bool{truth, truth})
 	require.Equal(t, "y\ty\t\ntrue\ttrue\t\ntrue\ttrue", s)
 }
 
 func TestFromMapKeys_invalidKey(t *testing.T) {
 	f := formatter.FromMapKeys("\t", "\t\n", reflect.ValueOf("t"))
-	s, _ := f.Format(m)
+	s, _ := f.Format(truth)
 	require.Equal(t, "t\t\t\n", s)
 
 	f = formatter.FromMapSliceKeys("\t", "\t\n", reflect.ValueOf("t"))
-	s, _ = f.Format([]map[string]bool{m, m})
+	s, _ = f.Format([]map[string]bool{truth, truth})
 	require.Equal(t, "t\t\n\t\n", s)
 }
 
 func TestFromMapSlice(t *testing.T) {
 	f := formatter.FromMapSlice("\t", "\t\n")
-	s, _ := f.Format([]map[string]bool{m})
+	s, _ := f.Format([]map[string]bool{truth})
 	require.Regexp(t, "(y\tn\t\ntrue\tfalse)|(n\ty\t\nfalse\ttrue)", s)
 }

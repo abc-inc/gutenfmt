@@ -90,7 +90,7 @@ func (w Text) writeSlice(v reflect.Value) (int, error) {
 
 	cnt := n
 	for idx := 1; idx < v.Len(); idx++ {
-		n, err := io.WriteString(w.writer, w.Delim)
+		n, err = io.WriteString(w.writer, w.Delim)
 		cnt += n
 		if err != nil {
 			return cnt, err
@@ -118,7 +118,7 @@ func (w Text) writeMap(iter *reflect.MapIter) (int, error) {
 	cnt := n
 
 	for iter.Next() {
-		n, err := io.WriteString(w.writer, w.Delim)
+		n, err = io.WriteString(w.writer, w.Delim)
 		cnt += n
 		if err != nil {
 			return cnt, err

@@ -85,13 +85,14 @@ func (w Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 		return w.writeMapSlice(tw, v)
 	}
 
-	cnt, err := w.cw.WriteString(render.ToString(v.Index(0).Interface()))
+	n, err := w.cw.WriteString(render.ToString(v.Index(0).Interface()))
 	if err != nil {
-		return cnt, err
+		return n, err
 	}
+	cnt := n
 
 	for idx := 1; idx < v.Len(); idx++ {
-		n, err := w.cw.WriteString("\n" + render.ToString(v.Index(idx).Interface()))
+		n, err = w.cw.WriteString("\n" + render.ToString(v.Index(idx).Interface()))
 		cnt += n
 		if err != nil {
 			return cnt, err

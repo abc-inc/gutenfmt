@@ -35,7 +35,9 @@ func FromStruct(sep, delim string, typ reflect.Type) Formatter {
 		for _, f := range fs {
 			b.WriteString(f.Name)
 			b.WriteString(sep)
-			b.WriteString(render.ToString(v.FieldByName(f.Field).Interface()))
+			if !v.FieldByName(f.Field).IsZero() {
+				b.WriteString(render.ToString(v.FieldByName(f.Field).Interface()))
+			}
 			b.WriteString(delim)
 		}
 		return b.String()[:b.Len()-len(delim)], nil

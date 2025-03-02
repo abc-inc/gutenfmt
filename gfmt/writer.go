@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/alecthomas/chroma"
-	"github.com/alecthomas/chroma/formatters"
-	"github.com/alecthomas/chroma/styles"
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/formatters"
+	"github.com/alecthomas/chroma/v2/styles"
 )
 
 // Writer is the interface that wraps the generic Write method.

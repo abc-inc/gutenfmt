@@ -20,7 +20,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/abc-inc/gutenfmt/gfmt"
-	"github.com/alecthomas/chroma/styles"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/stretchr/testify/require"
 )
 

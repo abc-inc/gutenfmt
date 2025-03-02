@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/abc-inc/gutenfmt/gfmt"
-	"github.com/alecthomas/chroma/styles"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/stretchr/testify/require"
 )
 
@@ -69,7 +69,7 @@ func Test_Write_Types(t *testing.T) {
 		sTab := &strings.Builder{}
 		sText := &strings.Builder{}
 
-		prettyJSON := gfmt.NewJSON(sPrettyJSON, gfmt.WithPretty(), gfmt.WithStyle(styles.Native))
+		prettyJSON := gfmt.NewJSON(sPrettyJSON, gfmt.WithPretty(), gfmt.WithStyle(styles.Get("native")))
 		json := gfmt.NewJSON(sJSON)
 		tab := gfmt.NewTab(sTab)
 		text := gfmt.NewText(sText)

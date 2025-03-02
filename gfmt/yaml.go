@@ -23,12 +23,12 @@ import (
 
 	"github.com/abc-inc/gutenfmt/formatter"
 	"github.com/abc-inc/gutenfmt/internal/render"
-	"github.com/alecthomas/chroma"
-	"github.com/alecthomas/chroma/lexers/y"
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/lexers"
 	"gopkg.in/yaml.v3"
 )
 
-// YAML is a generic Writer that formats arbitrary values as YSON.
+// YAML is a generic Writer that formats arbitrary values as YAML.
 type YAML struct {
 	writer    io.Writer
 	Formatter *formatter.CompFormatter
@@ -77,7 +77,7 @@ func (w YAML) Write(i any) (int, error) {
 	}
 
 	cw := wrapCountingWriter(w.writer)
-	if err := highlight(cw, y.YAML, s, w.Style); err != nil {
+	if err := highlight(cw, lexers.Get("yaml"), s, w.Style); err != nil {
 		return 0, err
 	}
 	return cw.cnt, nil

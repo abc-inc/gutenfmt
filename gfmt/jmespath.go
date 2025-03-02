@@ -38,8 +38,12 @@ func NewJMESPath(w Writer, expr string) *JMESPath {
 
 func (w JMESPath) Write(i any) (int, error) {
 	typ := reflect.TypeOf(i)
-	k := typ.Kind()
+	if typ == nil {
+		// no input - nothing to be done
+		return 0, nil
+	}
 
+	k := typ.Kind()
 	if k == reflect.Pointer {
 		return w.Write(reflect.ValueOf(i).Elem().Interface())
 	}

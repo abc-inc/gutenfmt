@@ -19,7 +19,7 @@ The following examples provide a brief overview of gutenfmt and its features.
 
 ```shell
 $ env | gutenfmt --jq .JAVA_HOME
-$ # or
+$ # or JMESPath
 $ env | gutenfmt --query JAVA_HOME
 $ # instead of
 $ env | grep -E ^JAVA_HOME= | cut -d = -f 2
@@ -47,7 +47,7 @@ $ dpkg-query -W -f='${Package}\t${Version}\t${Status}\n' "openjdk*" | grep -Fv u
 ### Print JavaScript Dependencies as Table With Aligned Columns
 
 ```shell
-$ jq '.dependencies' package.json | tr -d '" ,' | gutenfmt -o text | sort
+$ gutenfmt package.json --jq '.dependencies' -o text | sort
 
 ...
 @types/yargs                         ^17.0.3

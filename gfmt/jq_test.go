@@ -68,7 +68,7 @@ func TestJQWriter_WriteAny(t *testing.T) {
 		{name: "string", input: `hello`, expr: ".", expected: "hello"},
 		{name: "array", input: []any{1, 2, 3}, expr: ".[1]", expected: "2"},
 		{name: "nested", input: map[string]any{"a": map[string]any{"b": 2}}, expr: ".a.b", expected: "2"},
-		{name: "invalid", input: map[string]any{"a": 1}, expr: ".x", expected: ""},
+		{name: "undefined", input: map[string]any{"a": 1}, expr: ".x", expected: "null"},
 	}
 
 	for _, tt := range tests {

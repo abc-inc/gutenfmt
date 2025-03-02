@@ -22,29 +22,51 @@ import (
 	"io"
 	"math"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/itchyny/gojq"
 )
 
+type Arg struct {
+	Key    string
+	Val    string
+	String bool
+}
+
+func NewArg(kv string, strLiteral bool) (*Arg, error) {
+	if k, v, ok := strings.Cut(kv, "="); ok {
+		return &Arg{Key: k, Val: v, String: strLiteral}, nil
+	}
+	return nil, fmt.Errorf("invalid argument: %s", kv)
+}
+
 type JQ struct {
 	writer Writer
 	Expr   string
+	Args   []Arg
 }
 
-func NewJQ(w Writer, expr string) *JQ {
+func NewJQ(w Writer, expr string, args ...Arg) *JQ {
 	return &JQ{
 		writer: w,
 		Expr:   expr,
+		Args:   args,
 	}
 }
 
 func (w JQ) Write(i any) (int, error) {
 	b := bytes.Buffer{}
-	if err := evalJQ(i, &b, w.Expr); err != nil {
+	if err := evalJQ(i, &b, w.Expr, w.Args...); err != nil {
 		return 0, err
 	}
+	// If the output is NO json, e.g., a literal string or null, write it as is.
+	if !json.Valid(b.Bytes()) || b.String() == "null\n" {
+		return w.writer.Write(strings.TrimSuffix(b.String(), "\n"))
+	}
+
+	// Otherwise, create a new data structure and let the other writer handle it.
 	var v any
 	if err := json.Unmarshal(b.Bytes(), &v); err != nil {
 		return 0, err
@@ -54,7 +76,7 @@ func (w JQ) Write(i any) (int, error) {
 
 // evalJQ evaluates a jq expression against an input and write it to an output.
 // Any top-level scalar values produced by the jq expression are written out as JSON scalars.
-func evalJQ(val any, output io.Writer, expr string) error {
+func evalJQ(v any, w io.Writer, expr string, args ...Arg) error {
 	query, err := gojq.Parse(expr)
 	if err != nil {
 		var e *gojq.ParseError
@@ -68,43 +90,74 @@ func evalJQ(val any, output io.Writer, expr string) error {
 		return err
 	}
 
-	code, err := gojq.Compile(query, gojq.WithEnvironLoader(os.Environ))
+	vars, vals, err := parseArgs(args...)
 	if err != nil {
 		return err
 	}
 
-	iter := code.Run(val)
+	code, err := gojq.Compile(query,
+		gojq.WithEnvironLoader(os.Environ),
+		gojq.WithVariables(vars),
+		gojq.WithFunction("raw", 0, 0, rawFunc),
+	)
+	if err != nil {
+		return err
+	}
+
+	// gojq panic upon errors involving third-party types like lists of a custom struct.
+	// As a workaround, we serialize the input to JSON and then deserialize it back.
+	var buf []byte
+	if buf, err = json.Marshal(v); err != nil {
+		return err
+	}
+	if err = json.Unmarshal(buf, &v); err != nil {
+		return err
+	}
+
+	iter := code.Run(v, vals...)
 	for {
-		v, hasNext := iter.Next()
+		val, hasNext := iter.Next()
 		if !hasNext {
 			break
 		}
-		if vErr, isErr := v.(error); isErr {
+		if vErr, isErr := val.(error); isErr {
 			var e *gojq.HaltError
 			if errors.As(vErr, &e) && e.Value() == nil {
 				break
 			}
 			return vErr
 		}
-		if text, ok := jsonScalarToString(v); ok {
-			if _, err = fmt.Fprintln(output, text); err != nil {
-				return err
-			}
-		} else {
-			var j []byte
-			if j, err = json.Marshal(v); err != nil {
-				return err
-			}
-			if _, err = fmt.Fprintln(output, string(j)); err != nil {
-				return err
-			}
+
+		var j []byte
+		if j, err = json.Marshal(val); err != nil {
+			return err
+		}
+		if _, err = fmt.Fprintln(w, string(j)); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func jsonScalarToString(input interface{}) (string, bool) {
+func parseArgs(args ...Arg) (ks []string, vs []any, err error) {
+	for _, a := range args {
+		if a.String {
+			ks = append(ks, "$"+strings.TrimPrefix(a.Key, "$"))
+			vs = append(vs, a.Val)
+		} else {
+			var j any
+			if j, err = decode(a.Val); err != nil {
+				return nil, nil, err
+			}
+			ks = append(ks, "$"+strings.TrimPrefix(a.Key, "$"))
+			vs = append(vs, j)
+		}
+	}
+	return
+}
+
+func jsonScalarToString(input interface{}) (string, bool) { //nolint:unused
 	switch tt := input.(type) {
 	case string:
 		return `"` + tt + `"`, true
@@ -134,4 +187,20 @@ func getLineColumn(expr string, offset int) (string, int, int) {
 		expr = expr[index+1:]
 		offset -= index + 1
 	}
+}
+
+func rawFunc(a any, _ []any) any {
+	if t := reflect.TypeOf(a); t != nil && t.Kind() == reflect.String {
+		return strings.Trim(a.(string), `"`)
+	} else if a == nil {
+		return "null"
+	}
+	return a
+}
+
+func decode(s string) (v any, err error) {
+	dec := json.NewDecoder(strings.NewReader(s))
+	dec.UseNumber()
+	err = dec.Decode(&v)
+	return
 }

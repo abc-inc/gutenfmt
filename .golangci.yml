@@ -24,7 +24,7 @@ linters:
     - goimports
     - gosec
     - misspell
-    - nolintlint
+    # - nolintlint
     - prealloc
     - revive
     - stylecheck

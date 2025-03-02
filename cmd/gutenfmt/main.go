@@ -15,19 +15,21 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"runtime"
 	"strings"
 
 	"github.com/abc-inc/gutenfmt/gfmt"
-	"github.com/alecthomas/chroma"
-	"github.com/alecthomas/chroma/formatters"
-	"github.com/alecthomas/chroma/lexers/j"
-	"github.com/alecthomas/chroma/styles"
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/formatters"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
@@ -65,11 +67,11 @@ The following output formats are supported:
 				fmt.Println(strings.Join(styles.Names(), "\n"))
 			} else {
 				ex := `{"types": [true, 1, "y"]} // example`
-				l := chroma.Coalesce(j.JSON)
+				l := chroma.Coalesce(lexers.Get("json"))
 				for _, s := range styles.Names() {
 					fmt.Print("Theme: " + s + "\n    ")
 					it, _ := l.Tokenise(nil, ex)
-					if err := formatters.TTY.Format(os.Stdout, styles.Get(s), it); err != nil {
+					if err := formatters.TTY16m.Format(os.Stdout, styles.Get(s), it); err != nil {
 						log.Fatal(err)
 					}
 					fmt.Print("\n\n")
@@ -78,7 +80,8 @@ The following output formats are supported:
 			return
 		}
 
-		if isatty.IsTerminal(os.Stdin.Fd()) && len(args) == 0 {
+		if (isatty.IsTerminal(os.Stdin.Fd()) && len(args) == 0) ||
+			(!cmd.Flags().Changed("jq") && (cmd.Flags().Changed("arg") || cmd.Flags().Changed("argjson"))) {
 			_ = cmd.Help()
 			os.Exit(1)
 		}
@@ -122,7 +125,26 @@ The following output formats are supported:
 		}
 
 		if jq, _ := cmd.Flags().GetString("jq"); jq != "" {
-			w = gfmt.NewJQ(w, jq)
+			var allArgs []gfmt.Arg
+			args, _ := cmd.Flags().GetStringSlice("arg")
+			for _, a := range args {
+				arg, err := gfmt.NewArg(a, true)
+				if err != nil {
+					log.Fatal(err)
+				}
+				allArgs = append(allArgs, *arg)
+			}
+
+			args, _ = cmd.Flags().GetStringSlice("argjson")
+			for _, a := range args {
+				arg, err := gfmt.NewArg(a, false)
+				if err != nil {
+					log.Fatal(err)
+				}
+				allArgs = append(allArgs, *arg)
+			}
+
+			w = gfmt.NewJQ(w, jq, allArgs...)
 		} else if q, _ := cmd.Flags().GetString("query"); q != "" {
 			w = gfmt.NewJMESPath(w, q)
 		}
@@ -138,12 +160,19 @@ func main() {
 		colorable.EnableColorsStdout(nil)
 	}
 
+	theme := ""
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		theme = "native"
+	}
+
+	rootCmd.Flags().StringSlice("arg", nil, "Pass a string value to the jq filter as a predefined variable.")
+	rootCmd.Flags().StringSlice("argjson", nil, "Pass a JSON-encoded value to the jq filter as a predefined variable.")
 	rootCmd.Flags().String("jq", "", "Specify a jq filter for modifying the output.")
 	rootCmd.Flags().Bool("list-themes", false, "Display a list of supported themes for syntax highlighting.")
 	rootCmd.Flags().StringP("output", "o", "", "The formatting style for command output (csv, json, table, text, tsv, yaml).")
 	rootCmd.Flags().String("pretty", "auto", `Pretty-print the output (JSON or YAML). Possible values are "true"/"always", "false"/"never", "auto".`)
 	rootCmd.Flags().StringP("query", "q", "", "Specify a JMESPath query to use in filtering the output")
-	rootCmd.Flags().String("theme", "", "Set the theme for syntax highlighting. Use '--list-themes' to see all available themes.")
+	rootCmd.Flags().String("theme", theme, "Set the theme for syntax highlighting. Use '--list-themes' to see all available themes.")
 
 	rootCmd.MarkFlagsMutuallyExclusive("jq", "query")
 	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {
@@ -172,17 +201,20 @@ func parse(name string) any {
 		defer func() { _ = r.Close() }()
 	}
 
+	bs, err := io.ReadAll(r)
+	if err != nil {
+		log.Fatalln(err) //nolint:gocritic
+	}
+
 	var m any
-	var bs []byte
 	kv := map[string]any{}
-	d := json.NewDecoder(r)
+	d := json.NewDecoder(bytes.NewReader(bs))
 	if err = d.Decode(&m); err != nil {
-		bs, err = os.ReadFile(name)
-		if err != nil {
-			log.Fatalln(err) //nolint:gocritic
-		}
-		if idx := bytes.IndexAny(bs, "=:\t"); idx > 0 {
-			kv[string(bs[:idx])] = string(bs[idx+1:])
+		s := bufio.NewScanner(bytes.NewReader(bs))
+		for s.Scan() {
+			if idx := bytes.IndexAny(s.Bytes(), "=:\t"); idx > 0 {
+				kv[string(s.Bytes()[:idx])] = string(s.Bytes()[idx+1:])
+			}
 		}
 	}
 	if len(kv) > 0 {

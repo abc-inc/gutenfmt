@@ -46,21 +46,31 @@ type JQ struct {
 	writer Writer
 	Expr   string
 	Args   []Arg
+	Raw    bool
 }
 
-func NewJQ(w Writer, expr string, args ...Arg) *JQ {
-	return &JQ{
-		writer: w,
+func NewJQ(delegate Writer, expr string, opts ...Opt[JQ]) *JQ {
+	return NewJQWithArgs(delegate, expr, nil, opts...)
+}
+
+func NewJQWithArgs(delegate Writer, expr string, args []Arg, opts ...Opt[JQ]) *JQ {
+	w := &JQ{
+		writer: delegate,
 		Expr:   expr,
 		Args:   args,
 	}
+	for _, opt := range opts {
+		opt(w)
+	}
+	return w
 }
 
 func (w JQ) Write(i any) (int, error) {
 	b := bytes.Buffer{}
-	if err := evalJQ(i, &b, w.Expr, w.Args...); err != nil {
+	if err := w.evalJQ(i, &b); err != nil {
 		return 0, err
 	}
+
 	// If the output is NO json, e.g., a literal string or null, write it as is.
 	if !json.Valid(b.Bytes()) || b.String() == "null\n" {
 		return w.writer.Write(strings.TrimSuffix(b.String(), "\n"))
@@ -70,18 +80,20 @@ func (w JQ) Write(i any) (int, error) {
 	var v any
 	if err := json.Unmarshal(b.Bytes(), &v); err != nil {
 		return 0, err
+	} else if _, ok := v.(string); ok {
+		return w.writer.Write(strings.TrimSuffix(b.String(), "\n"))
 	}
 	return w.writer.Write(v)
 }
 
 // evalJQ evaluates a jq expression against an input and write it to an output.
 // Any top-level scalar values produced by the jq expression are written out as JSON scalars.
-func evalJQ(v any, w io.Writer, expr string, args ...Arg) error {
-	query, err := gojq.Parse(expr)
+func (w JQ) evalJQ(v any, out io.Writer) error {
+	query, err := gojq.Parse(w.Expr)
 	if err != nil {
 		var e *gojq.ParseError
 		if errors.As(err, &e) {
-			str, line, column := getLineColumn(expr, e.Offset-len(e.Token))
+			str, line, column := getLineColumn(w.Expr, e.Offset-len(e.Token))
 			return fmt.Errorf(
 				"failed to parse jq expression (line %d, column %d)\n    %s\n    %*c  %w",
 				line, column, str, column, '^', err,
@@ -90,7 +102,7 @@ func evalJQ(v any, w io.Writer, expr string, args ...Arg) error {
 		return err
 	}
 
-	vars, vals, err := parseArgs(args...)
+	vars, vals, err := parseArgs(w.Args...)
 	if err != nil {
 		return err
 	}
@@ -104,7 +116,7 @@ func evalJQ(v any, w io.Writer, expr string, args ...Arg) error {
 		return err
 	}
 
-	// gojq panic upon errors involving third-party types like lists of a custom struct.
+	// gojq panics upon errors involving third-party types like lists of a custom struct.
 	// As a workaround, we serialize the input to JSON and then deserialize it back.
 	var buf []byte
 	if buf, err = json.Marshal(v); err != nil {
@@ -129,10 +141,14 @@ func evalJQ(v any, w io.Writer, expr string, args ...Arg) error {
 		}
 
 		var j []byte
-		if j, err = json.Marshal(val); err != nil {
-			return err
+		if typ := reflect.TypeOf(val); typ != nil && reflect.TypeOf(val).Kind() == reflect.String && w.Raw {
+			j = []byte(val.(string))
+		} else {
+			if j, err = json.Marshal(val); err != nil {
+				return err
+			}
 		}
-		if _, err = fmt.Fprintln(w, string(j)); err != nil {
+		if _, err = fmt.Fprintln(out, string(j)); err != nil {
 			return err
 		}
 	}
@@ -190,7 +206,7 @@ func getLineColumn(expr string, offset int) (string, int, int) {
 }
 
 func rawFunc(a any, _ []any) any {
-	if t := reflect.TypeOf(a); t != nil && t.Kind() == reflect.String {
+	if typ := reflect.TypeOf(a); typ != nil && typ.Kind() == reflect.String {
 		return strings.Trim(a.(string), `"`)
 	} else if a == nil {
 		return "null"
@@ -203,4 +219,10 @@ func decode(s string) (v any, err error) {
 	dec.UseNumber()
 	err = dec.Decode(&v)
 	return
+}
+
+func WithRaw() Opt[JQ] {
+	return func(w *JQ) {
+		w.Raw = true
+	}
 }

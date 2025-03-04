@@ -42,7 +42,7 @@ func TestPrettyJSON_Write(t *testing.T) {
 
 	for _, tt := range tests {
 		b := strings.Builder{}
-		w := gfmt.NewJSON(&b, gfmt.WithPretty(), gfmt.WithStyle(styles.Get("native")))
+		w := gfmt.NewJSON(&b, gfmt.WithPretty[gfmt.JSON](), gfmt.WithStyle[gfmt.JSON](styles.Get("native")))
 		t.Run(tt.name, func(t *testing.T) {
 			b.Reset()
 			_, err := w.Write(tt.arg)
@@ -54,14 +54,14 @@ func TestPrettyJSON_Write(t *testing.T) {
 
 func TestPrettyJSON_WriteJSONTypes(t *testing.T) {
 	b := strings.Builder{}
-	_, err := gfmt.NewJSON(&b, gfmt.WithStyle(styles.Get("native"))).Write(jsonTypes)
+	_, err := gfmt.NewJSON(&b, gfmt.WithStyle[gfmt.JSON](styles.Get("native"))).Write(jsonTypes)
 	require.NoError(t, err)
 	require.Contains(t, b.String(), "\"Ptr\"\x1b[0m\x1b[37m:")
 }
 
 func TestPrettyJSON_WriteStruct(t *testing.T) {
 	b := strings.Builder{}
-	_, err := gfmt.NewJSON(&b, gfmt.WithStyle(styles.Get("native"))).Write(NewUser("John", "Doe"))
+	_, err := gfmt.NewJSON(&b, gfmt.WithStyle[gfmt.JSON](styles.Get("native"))).Write(NewUser("John", "Doe"))
 	require.NoError(t, err)
 	require.Regexp(t, `\x1b\[\d+m.*\x1b\[\d+m"John Doe"`, b.String())
 }

@@ -100,10 +100,10 @@ The following output formats are supported:
 			fallthrough
 		case "json":
 			if p == "true" || p == "always" || (p == "auto" && isatty.IsTerminal(os.Stdout.Fd())) {
-				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle(styles.Get(th)), gfmt.WithPretty())
+				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle[gfmt.JSON](styles.Get(th)), gfmt.WithPretty[gfmt.JSON]())
 				w.(*gfmt.JSON).Indent = "  "
 			} else {
-				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle(styles.Get(th)))
+				w = gfmt.NewJSON(os.Stdout, gfmt.WithStyle[gfmt.JSON](styles.Get(th)))
 			}
 		case "table":
 			w = gfmt.NewTab(os.Stdout)
@@ -115,9 +115,9 @@ The following output formats are supported:
 			w.(*gfmt.Text).Sep = "\t"
 		case "yaml":
 			if p == "true" || p == "always" || (p == "auto" && isatty.IsTerminal(os.Stdout.Fd())) {
-				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle(styles.Get(th)), gfmt.WithPretty())
+				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle[gfmt.YAML](styles.Get(th)), gfmt.WithPretty[gfmt.YAML]())
 			} else {
-				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle(styles.Get(th)))
+				w = gfmt.NewYAML(os.Stdout, gfmt.WithStyle[gfmt.YAML](styles.Get(th)))
 			}
 		default:
 			_ = cmd.Help()
@@ -144,7 +144,12 @@ The following output formats are supported:
 				allArgs = append(allArgs, *arg)
 			}
 
-			w = gfmt.NewJQ(w, jq, allArgs...)
+			raw, _ := cmd.Flags().GetBool("raw-output")
+			if raw {
+				w = gfmt.NewJQWithArgs(w, jq, allArgs, gfmt.WithRaw())
+			} else {
+				w = gfmt.NewJQWithArgs(w, jq, allArgs)
+			}
 		} else if q, _ := cmd.Flags().GetString("query"); q != "" {
 			w = gfmt.NewJMESPath(w, q)
 		}
@@ -172,6 +177,7 @@ func main() {
 	rootCmd.Flags().StringP("output", "o", "", "The formatting style for command output (csv, json, table, text, tsv, yaml).")
 	rootCmd.Flags().String("pretty", "auto", `Pretty-print the output (JSON or YAML). Possible values are "true"/"always", "false"/"never", "auto".`)
 	rootCmd.Flags().StringP("query", "q", "", "Specify a JMESPath query to use in filtering the output")
+	rootCmd.Flags().BoolP("raw-output", "r", false, "If the filter's result is a string, then it will be written directly to standard output rather than being formatted as a JSON string with quotes.")
 	rootCmd.Flags().String("theme", theme, "Set the theme for syntax highlighting. Use '--list-themes' to see all available themes.")
 
 	rootCmd.MarkFlagsMutuallyExclusive("jq", "query")

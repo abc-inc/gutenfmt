@@ -37,7 +37,7 @@ type YAML struct {
 }
 
 // NewYAML creates a new YAML Writer.
-func NewYAML(w io.Writer, opts ...Opt) *YAML {
+func NewYAML(w io.Writer, opts ...Opt[YAML]) *YAML {
 	gw := &YAML{w, formatter.NewComp(), 2, nil}
 	for _, opt := range opts {
 		opt(gw)

@@ -17,6 +17,7 @@ package gfmt
 import (
 	"fmt"
 	"io"
+	"reflect"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters"
@@ -103,31 +104,31 @@ func highlight(w io.Writer, l chroma.Lexer, text string, s *chroma.Style) error 
 }
 
 // Opt allows to customize the behavior of a Writer.
-type Opt func(writer Writer)
+type Opt[W Writer] func(writer *W)
 
 // WithPretty enables pretty-printing for the given Writer.
-func WithPretty() Opt {
-	return func(w Writer) {
-		switch w := w.(type) {
-		case *JSON:
-			w.Indent = "  "
-		case *YAML:
-			w.Indent = 2
+func WithPretty[W Writer]() Opt[W] {
+	return func(w *W) {
+		switch reflect.TypeOf(w) {
+		case reflect.TypeOf(&JSON{}):
+			any(w).(*JSON).Indent = "  "
+		case reflect.TypeOf(&YAML{}):
+			any(w).(*YAML).Indent = 2
 		}
 	}
 }
 
 // WithStyle sets the syntax highlighting style for the given Writer.
-func WithStyle(s *chroma.Style) Opt {
+func WithStyle[W Writer](s *chroma.Style) Opt[W] {
 	if s == styles.Fallback {
 		s = nil
 	}
-	return func(w Writer) {
-		switch x := w.(type) {
-		case *JSON:
-			x.Style = s
-		case *YAML:
-			x.Style = s
+	return func(w *W) {
+		switch reflect.TypeOf(w) {
+		case reflect.TypeOf(&JSON{}):
+			any(w).(*JSON).Style = s
+		case reflect.TypeOf(&YAML{}):
+			any(w).(*YAML).Style = s
 		}
 	}
 }

@@ -41,15 +41,15 @@ func TestJQWriter_Write(t *testing.T) {
 
 func TestJQWriter_WritePretty(t *testing.T) {
 	b := strings.Builder{}
-	_, _ = gfmt.NewJQ(gfmt.NewJSON(&b, gfmt.WithPretty(), gfmt.WithStyle(styles.Fallback)), ".").Write([]string{"A"})
+	_, _ = gfmt.NewJQ(gfmt.NewJSON(&b, gfmt.WithPretty[gfmt.JSON](), gfmt.WithStyle[gfmt.JSON](styles.Fallback)), ".").Write([]string{"A"})
 	require.Regexp(t, `^\[\n  `, b.String())
 
 	b = strings.Builder{}
-	_, _ = gfmt.NewJQ(gfmt.NewJSON(&b, gfmt.WithPretty(), gfmt.WithStyle(styles.Fallback)), ".nestedNumber").Write(map[string]any{"nestedNumber": "5"})
+	_, _ = gfmt.NewJQ(gfmt.NewJSON(&b, gfmt.WithPretty[gfmt.JSON](), gfmt.WithStyle[gfmt.JSON](styles.Fallback)), ".nestedNumber").Write(map[string]any{"nestedNumber": "5"})
 	require.Regexp(t, `5`, b.String())
 
 	b = strings.Builder{}
-	_, _ = gfmt.NewJQ(gfmt.NewJSON(&b, gfmt.WithPretty(), gfmt.WithStyle(styles.Fallback)), ".").Write(`a5`)
+	_, _ = gfmt.NewJQ(gfmt.NewJSON(&b, gfmt.WithPretty[gfmt.JSON](), gfmt.WithStyle[gfmt.JSON](styles.Fallback)), ".").Write(`a5`)
 	require.Regexp(t, `a5`, b.String())
 
 	b = strings.Builder{}
@@ -65,7 +65,7 @@ func TestJQWriter_WriteAny(t *testing.T) {
 		expected string
 	}{
 		{name: "integer", input: 42, expr: ".", expected: "42"},
-		{name: "string", input: `hello`, expr: ".", expected: "hello"},
+		{name: "string", input: `hello`, expr: ".", expected: `"hello"`},
 		{name: "array", input: []any{1, 2, 3}, expr: ".[1]", expected: "2"},
 		{name: "nested", input: map[string]any{"a": map[string]any{"b": 2}}, expr: ".a.b", expected: "2"},
 		{name: "undefined", input: map[string]any{"a": 1}, expr: ".x", expected: "null"},

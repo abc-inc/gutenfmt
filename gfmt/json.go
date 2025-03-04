@@ -37,7 +37,7 @@ type JSON struct {
 }
 
 // NewJSON creates a new JSON Writer.
-func NewJSON(w io.Writer, opts ...Opt) *JSON {
+func NewJSON(w io.Writer, opts ...Opt[JSON]) *JSON {
 	gw := &JSON{writer: w, Formatter: formatter.NewComp()}
 	for _, opt := range opts {
 		opt(gw)

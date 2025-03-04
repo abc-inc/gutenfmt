@@ -69,7 +69,7 @@ func Test_Write_Types(t *testing.T) {
 		sTab := &strings.Builder{}
 		sText := &strings.Builder{}
 
-		prettyJSON := gfmt.NewJSON(sPrettyJSON, gfmt.WithPretty(), gfmt.WithStyle(styles.Get("native")))
+		prettyJSON := gfmt.NewJSON(sPrettyJSON, gfmt.WithPretty[gfmt.JSON](), gfmt.WithStyle[gfmt.JSON](styles.Get("native")))
 		json := gfmt.NewJSON(sJSON)
 		tab := gfmt.NewTab(sTab)
 		text := gfmt.NewText(sText)

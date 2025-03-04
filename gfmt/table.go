@@ -81,7 +81,7 @@ func (w Tab) writeSlice(tw *tabwriter.Writer, v reflect.Value) (int, error) {
 	if v.Len() == 0 {
 		return 0, nil
 	}
-	if reflect.TypeOf(reflect.Indirect(v.Index(0)).Interface()).Kind() == reflect.Map {
+	if typ := reflect.TypeOf(reflect.Indirect(v.Index(0)).Interface()); typ != nil && typ.Kind() == reflect.Map {
 		return w.writeMapSlice(tw, v)
 	}
 

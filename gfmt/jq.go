@@ -116,8 +116,14 @@ func (w JQ) evalJQ(v any, out io.Writer) error {
 		return err
 	}
 
-	// gojq panics upon errors involving third-party types like lists of a custom struct.
-	// As a workaround, we serialize the input to JSON and then deserialize it back.
+	// gojq panics upon errors involving third-party types like lists of a custom struct or pointers.
+	// As a workaround, we marshal the input to JSON and then unmarshal it to a dynamic structure.
+	for reflect.TypeOf(v).Kind() == reflect.Pointer {
+		if !reflect.ValueOf(v).IsValid() || reflect.ValueOf(v).IsZero() {
+			break
+		}
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
 	var buf []byte
 	if buf, err = json.Marshal(v); err != nil {
 		return err

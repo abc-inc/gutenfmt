@@ -45,7 +45,10 @@ func ToString(i any) string {
 	case reflect.Func:
 		return funcName(reflect.ValueOf(i))
 	case reflect.Ptr:
-		return ToString(reflect.Indirect(reflect.ValueOf(i)).Interface())
+		if v := reflect.ValueOf(i); v.IsValid() {
+			return ToString(reflect.Indirect(v).Interface())
+		}
+		return ""
 	case reflect.String:
 		return i.(string)
 	default:

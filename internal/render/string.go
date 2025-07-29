@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strconv"
 )
 
 // ToString returns a human-readable string representation of i.
@@ -35,18 +36,43 @@ func ToString(i any) string {
 	if i == nil {
 		return ""
 	}
-	typ := reflect.TypeOf(i)
-	switch typ.Kind() { //nolint:exhaustive
+
+	v := reflect.ValueOf(i)
+	switch {
+	case v.CanInt():
+		return strconv.FormatInt(v.Int(), 10)
+	case v.CanUint():
+		return strconv.FormatUint(v.Uint(), 10)
+	default:
+		// check the type's kind
+	}
+
+	typ := v.Type()
+	switch typ.Kind() {
+	case reflect.Bool:
+		return strconv.FormatBool(v.Bool())
 	case reflect.Array, reflect.Slice:
 		s := fmt.Sprint(i)
 		return s[1 : len(s)-1]
 	case reflect.Chan:
 		return typ.String()
+	case reflect.Complex64:
+		return strconv.FormatComplex(complex128(i.(complex64)), 'f', -1, 64)
+	case reflect.Complex128:
+		return strconv.FormatComplex(i.(complex128), 'f', -1, 128)
+	case reflect.Float32:
+		// float32 requires special handling, because of IEEE 754.
+		return strconv.FormatFloat(float64(i.(float32)), 'f', -1, 32)
+	case reflect.Float64:
+		return strconv.FormatFloat(i.(float64), 'f', -1, 64)
 	case reflect.Func:
 		return funcName(reflect.ValueOf(i))
 	case reflect.Ptr:
-		if v := reflect.ValueOf(i); v.IsValid() {
-			return ToString(reflect.Indirect(v).Interface())
+		if v.IsValid() {
+			e := reflect.Indirect(v)
+			if e.IsValid() {
+				return ToString(e.Interface())
+			}
 		}
 		return ""
 	case reflect.String:

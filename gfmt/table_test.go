@@ -15,8 +15,10 @@
 package gfmt_test
 
 import (
+	"math"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -77,8 +79,8 @@ Uint16         16
 Uint32         32
 Uint64         64
 Uintptr        128
-Float32        3.4028235e+38
-Float64        1.7976931348623157e+308
+Float32        `+strconv.FormatFloat(math.MaxFloat32, 'f', -1, 32)+`
+Float64        `+strconv.FormatFloat(math.MaxFloat64, 'f', -1, 64)+`
 Complex64      (0-2.71i)
 Complex128     (0-3.14i)
 Array          a b`+`

@@ -52,7 +52,7 @@ func (w Tab) Write(i any) (int, error) {
 	if typ.Kind() == reflect.Ptr {
 		return w.Write(reflect.Indirect(reflect.ValueOf(i)).Interface())
 	} else if !isContainerType(typ.Kind()) {
-		return fmt.Fprint(w.cw, i)
+		return fmt.Fprint(w.cw, render.ToString(i))
 	}
 
 	w.cw.cnt = 0

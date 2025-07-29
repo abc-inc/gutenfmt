@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/abc-inc/gutenfmt/formatter"
+	"github.com/abc-inc/gutenfmt/internal/render"
 )
 
 // Text is a generic Writer that formats arbitrary values as plain text.
@@ -54,7 +55,7 @@ func (w Text) Write(i any) (int, error) {
 	} else if str, ok := i.(fmt.Stringer); ok {
 		return fmt.Fprint(w.writer, str.String())
 	} else if !isContainerType(typ.Kind()) {
-		return fmt.Fprint(w.writer, i)
+		return fmt.Fprint(w.writer, render.ToString(i))
 	}
 
 	switch typ.Kind() { //nolint:exhaustive
